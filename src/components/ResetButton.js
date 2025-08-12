@@ -1,6 +1,6 @@
 function ResetButton({ dispatch }) {
     const handleReset = () => {
-        const confirmReset = window.confirm("Are you sure you want to reset the quiz? All progress will be lost.");
+        const confirmReset = window.confirm("Are you sure you want to restart the quiz? All progress will be lost.");
         if (confirmReset) {
             dispatch({ type: "restart" });
         }
@@ -8,7 +8,8 @@ function ResetButton({ dispatch }) {
 
     return (
         <button
-            className="text-xl fixed top-4 right-4 bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-full transition-colors duration-200 flex items-center gap-2"
+            className="fixed top-4 right-4 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-full 
+            transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg transform hover:scale-105"
             onClick={handleReset}
         >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">

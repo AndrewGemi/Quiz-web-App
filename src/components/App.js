@@ -1,196 +1,336 @@
 import { useEffect, useReducer } from "react";
-import Header from "./Header";
-import Main from "./Main";
-import Loader from "./Loader";
+import CategorySelection from "./CategorySelection";
 import Error from "./Error";
-import StartScreen from "./StartScreen";
-import Question from "./Question";
-import NextButton from "./NextButton";
-import Progress from "./Progress";
 import FinishScreen from "./FinishScreen";
 import Footer from "./Footer";
-import Timer from "./Timer";
+import Header from "./Header";
+import Loader from "./Loader";
+import Main from "./Main";
+import NextButton from "./NextButton";
+import Progress from "./Progress";
+import Question from "./Question";
+import ResetButton from "./ResetButton";
 import TeamSetup from "./TeamSetup";
 import TeamTransition from "./TeamTransition";
-import ResetButton from "./ResetButton";
+import Timer from "./Timer";
 
 const SECS_PER_QUESTION = 30;
 
 const initialState = {
   questions: [],
-  // 'loading' , 'error' , 'ready' , 'active' ,'finished'
   status: "loading",
   index: 0,
   answer: null,
-  points: {},  // Changed to object to store points per team
+  points: {},
   secondsRemaining: null,
   isTimerPaused: false,
   teams: [],
   currentTeam: null,
   showTransition: true,
+  categories: [],
+  currentCategory: null,
+  completedCategories: [],
+  totalPoints: {},
 };
 
 function reducer(state, action) {
-  switch (action.type) {
-    case "dataReceived":
-      return {
-        ...state,
-        questions: action.payload,
-        status: "ready",
-        highScore: 0,
-      };
+  console.log("Reducer action:", action.type, action.payload);
 
-    case "dataFailed":
-      return {
-        ...state,
-        status: "error",
-      };
+  try {
+    switch (action.type) {
+      case "dataReceived":
+        return {
+          ...state,
+          categories: action.payload.categories || [],
+          status: "selectingTeams",
+        };
 
-    case "start":
-      return {
-        ...state,
-        status: "active",
-        secondsRemaining: SECS_PER_QUESTION, // Change this line to start with 30 seconds
-      };
+      case "teamsConfirmed":
+        const teams = action.payload || [];
+        return {
+          ...state,
+          teams,
+          points: teams.reduce((acc, team) => ({ ...acc, [team]: 0 }), {}),
+          totalPoints: teams.reduce((acc, team) => ({ ...acc, [team]: 0 }), {}),
+          currentTeam: teams[0] || null,
+          status: "selectingCategory",
+        };
 
-    case "tick":
-      return {
-        ...state,
-        secondsRemaining: state.isTimerPaused
-          ? state.secondsRemaining
-          : Math.max(0, state.secondsRemaining - 1),
-        answer: state.secondsRemaining <= 1
-          ? state.questions[state.index].correctOption
-          : state.answer
-      };
+      case "dataFailed":
+        return {
+          ...state,
+          status: "error",
+        };
 
-    case "toggleTimer":
-      return {
-        ...state,
-        isTimerPaused: !state.isTimerPaused,
-      };
+      case "start":
+        return {
+          ...state,
+          status: "active",
+          secondsRemaining: SECS_PER_QUESTION,
+          isTimerPaused: false,
+        };
 
-    case "setTeams":
-      return {
-        ...state,
-        teams: action.payload,
-        points: action.payload.reduce((acc, team) => ({ ...acc, [team]: 0 }), {}),
-        currentTeam: action.payload[0]
-      };
+      case "tick":
+        return {
+          ...state,
+          secondsRemaining: state.isTimerPaused
+            ? state.secondsRemaining
+            : Math.max(0, state.secondsRemaining - 1),
+          answer:
+            state.secondsRemaining <= 1
+              ? state.questions[state.index]?.correctOption
+              : state.answer,
+        };
 
-    case "newAnswer":
-      const question = state.questions.at(state.index);
-      return {
-        ...state,
-        answer: action.payload,
-        isTimerPaused: true,
-        points: {
-          ...state.points,
-          [state.currentTeam]:
-            action.payload === question.correctOption && state.secondsRemaining > 0
-              ? state.points[state.currentTeam] + question.points
-              : state.points[state.currentTeam]
+      case "toggleTimer":
+        return {
+          ...state,
+          isTimerPaused: !state.isTimerPaused,
+        };
+
+      case "setTeams":
+        const newTeams = action.payload || [];
+        return {
+          ...state,
+          teams: newTeams,
+          points: newTeams.reduce((acc, team) => ({ ...acc, [team]: 0 }), {}),
+          currentTeam: newTeams[0] || null,
+        };
+
+      case "newAnswer": {
+        const question = state.questions[state.index];
+        if (!question) return state;
+
+        const isCorrect = action.payload === question.correctOption;
+        const currentTeam = state.currentTeam;
+        if (!currentTeam) return state;
+
+        return {
+          ...state,
+          answer: action.payload,
+          points: {
+            ...state.points,
+            [currentTeam]:
+              isCorrect && state.secondsRemaining > 0
+                ? (state.points[currentTeam] || 0) + (question.points || 0)
+                : state.points[currentTeam] || 0,
+          },
+          isTimerPaused: true,
+        };
+      }
+
+      case "hideTransition":
+        return {
+          ...state,
+          showTransition: false,
+        };
+
+      case "selectCategory": {
+        const categoryIndex = action.payload;
+        const selectedCategory = state.categories[categoryIndex];
+        if (!selectedCategory) return state;
+
+        return {
+          ...state,
+          currentCategory: categoryIndex,
+          questions: selectedCategory.questions || [],
+          status: "active",
+          index: 0,
+          answer: null,
+          points: Object.fromEntries(state.teams.map((team) => [team, 0])),
+          secondsRemaining: SECS_PER_QUESTION,
+          showTransition: true,
+        };
+      }
+
+      case "categoryComplete": {
+        // Calculate new total points by adding current category points
+        const newTotalPoints = { ...state.totalPoints };
+        Object.entries(state.points || {}).forEach(([team, score]) => {
+          newTotalPoints[team] = (newTotalPoints[team] || 0) + (score || 0);
+        });
+
+        // Check if this was the last category
+        const newCompletedCategories = [
+          ...state.completedCategories,
+          state.currentCategory,
+        ];
+        const isLastCategory =
+          newCompletedCategories.length >= state.categories.length;
+
+        return {
+          ...state,
+          completedCategories: newCompletedCategories,
+          totalPoints: newTotalPoints,
+          status: isLastCategory ? "finished" : "selectingCategory",
+          currentCategory: isLastCategory ? state.currentCategory : null,
+          questions: [],
+          index: 0,
+          answer: null,
+          points: Object.fromEntries(state.teams.map((team) => [team, 0])),
+          showTransition: true,
+        };
+      }
+
+      case "nextQuestion": {
+        const isLastQuestion = state.index >= state.questions.length - 1;
+
+        if (isLastQuestion) {
+          return {
+            ...state,
+            status: "finished",
+            showTransition: false,
+            secondsRemaining: null,
+            // keep `points` as-is so the Finish screen can show the category scoreboard
+          };
         }
-      };
 
-    case "hideTransition":
-      return {
-        ...state,
-        showTransition: false,
-      };
+        // Normal advance: rotate team and reset timer
+        const currentTeamIndex = state.teams.indexOf(state.currentTeam);
+        const nextTeamIndex = (currentTeamIndex + 1) % state.teams.length;
 
-    case "nextQuestion":
-      const nextTeamIndex = (state.teams.indexOf(state.currentTeam) + 1) % state.teams.length;
-      return {
-        ...state,
-        index: state.index + 1,
-        answer: null,
-        secondsRemaining: SECS_PER_QUESTION,
-        currentTeam: state.teams[nextTeamIndex],
-        showTransition: true,
-        isTimerPaused: false,
-      };
+        return {
+          ...state,
+          index: state.index + 1,
+          answer: null,
+          currentTeam: state.teams[nextTeamIndex] || state.teams[0],
+          secondsRemaining: SECS_PER_QUESTION,
+          showTransition: true,
+          isTimerPaused: false,
+        };
+      }
 
-    case "finish":
-      return {
-        ...state,
-        status: "finished",
-        highScore:
-          state.points > state.highScore ? state.points : state.highScore,
-      };
+      case "restart":
+        return {
+          ...initialState,
+          status: "selectingTeams",
+          categories: state.categories, // Keep the loaded categories
+        };
 
-    case "restart":
-      return {
-        ...initialState,
-        questions: state.questions,
-        status: "ready"
-      };
-
-    default:
-      throw new Error("Action unknown");
+      default:
+        console.error("Unknown action type:", action.type);
+        return state;
+    }
+  } catch (error) {
+    console.error("Reducer error:", error, "Action:", action);
+    return state; // Return current state on error to prevent crashes
   }
 }
 
 export default function App() {
-  const [
-    { questions, status, index, answer, points, highScore, secondsRemaining, isTimerPaused, currentTeam, showTransition, teams },
-    dispatch,
-  ] = useReducer(reducer, initialState);
+  const [state, dispatch] = useReducer(reducer, initialState);
 
-  const numQuestions = questions.length;
-  const totalPoints = questions.reduce((prev, cur) => prev + cur.points, 0);
+  const {
+    questions,
+    status,
+    index,
+    answer,
+    points,
+    secondsRemaining,
+    isTimerPaused,
+    currentTeam,
+    showTransition,
+    teams,
+    categories,
+    currentCategory,
+    completedCategories,
+    totalPoints,
+  } = state;
 
-  useEffect(function () {
-    fetch("http://localhost:8000/questions")
-      .then((res) => res.json())
-      .then((data) => dispatch({ type: "dataReceived", payload: data }))
-      .catch((err) => dispatch({ type: "dataFailed" }));
+  const numQuestions = questions?.length || 0;
+  const categoryTotalPoints =
+    questions?.reduce((prev, cur) => prev + (cur?.points || 0), 0) || 0;
+
+  console.log("App render:", {
+    status,
+    currentCategory,
+    categoriesLength: categories?.length || 0,
+    completedCategoriesLength: completedCategories?.length || 0,
+    hasCategories: !!categories,
+    hasTotalPoints: !!totalPoints,
+    teams: teams?.length || 0,
+  });
+
+  useEffect(() => {
+    fetch(`${process.env.PUBLIC_URL}/data/questions.json`)
+      .then((r) => r.json())
+      .then((data) => dispatch({ type: "dataReceived", payload: data }));
   }, []);
 
   return (
     <div className="app">
       <Header />
-      {(status === 'active' || status === 'finished') && (
+      {(status === "active" || status === "finished") && (
         <ResetButton dispatch={dispatch} />
       )}
+
       <Main>
         {status === "loading" && <Loader />}
         {status === "error" && <Error />}
-        {status === "ready" && (
-          <TeamSetup dispatch={dispatch} />
+
+        {status === "selectingTeams" && (
+          <TeamSetup
+            onConfirm={(teams) =>
+              dispatch({ type: "teamsConfirmed", payload: teams })
+            }
+          />
         )}
+
+        {status === "selectingCategory" && (
+          <CategorySelection
+            categories={categories || []}
+            onSelect={(index) =>
+              dispatch({ type: "selectCategory", payload: index })
+            }
+            completedCategories={completedCategories || []}
+          />
+        )}
+
         {status === "active" && (
           <>
             {showTransition ? (
               <TeamTransition
-                team={currentTeam}
+                team={currentTeam || "Team"}
                 onContinue={() => dispatch({ type: "hideTransition" })}
               />
             ) : (
-              <>
-                <div className="text-center text-4xl text-gray-200 mb-6">
-                  Current Team: <p className="font-bold text-[#6b05fa]">{currentTeam}</p>
+              <div className="flex flex-col items-center py-2 w-full">
+                <div className="mb-8 text-center w-full">
+                  <span className="text-xl lg:text-4xl font-semibold">
+                    Current team:{" "}
+                    <span className="text-[#6b05fa]">
+                      {currentTeam || "Unknown"}
+                    </span>
+                  </span>
                 </div>
+
                 <Progress
                   index={index}
                   numQuestions={numQuestions}
-                  points={points[currentTeam]}
-                  totalPoints={totalPoints / teams.length}
+                  points={points && currentTeam ? points[currentTeam] || 0 : 0}
+                  totalPoints={
+                    teams?.length ? categoryTotalPoints / teams.length : 0
+                  }
                   answer={answer}
                 />
                 <div className="flex flex-col">
                   <Timer
                     dispatch={dispatch}
-                    secondsRemaining={secondsRemaining}
+                    secondsRemaining={secondsRemaining || 0}
                     isTimerPaused={isTimerPaused}
                   />
                 </div>
 
-                <Question
-                  question={questions[index]}
-                  dispatch={dispatch}
-                  answer={answer}
-                />
+                {questions[index] && (
+                  <Question
+                    question={questions[index]}
+                    dispatch={dispatch}
+                    answer={answer}
+                    secondsRemaining={secondsRemaining || 0}
+                    isTimerPaused={isTimerPaused}
+                  />
+                )}
+
                 <Footer>
                   <NextButton
                     index={index}
@@ -199,19 +339,27 @@ export default function App() {
                     answer={answer}
                   />
                 </Footer>
-              </>
+              </div>
             )}
           </>
         )}
+
         {status === "finished" && (
           <FinishScreen
-            points={points}
-            totalPoints={totalPoints}
+            points={points || {}}
+            totalPoints={totalPoints || {}}
+            categoryTitle={
+              currentCategory !== null && categories?.[currentCategory]
+                ? categories[currentCategory].title
+                : "Quiz Complete"
+            }
             dispatch={dispatch}
+            hasMoreCategories={
+              (completedCategories?.length || 0) + 1 < (categories?.length || 0)
+            }
           />
         )}
       </Main>
     </div>
   );
 }
-

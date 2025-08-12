@@ -46,7 +46,7 @@ function Timer({ dispatch, secondsRemaining, isTimerPaused }) {
         </text>
       </svg>
       <button
-        className={`btn btn-pause ${secondsRemaining === 0 ? "pointer-events-none" : ""}`}
+        className={`btn btn-pause hover:scale-75 ${secondsRemaining === 0 ? "pointer-events-none" : ""}`}
         disabled={secondsRemaining === 0}
         onClick={() => dispatch({ type: "toggleTimer" })}
       >
