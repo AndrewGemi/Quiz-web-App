@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-function Timer({ dispatch, secondsRemaining, isTimerPaused }) {
+function Timer({ dispatch, secondsRemaining, isTimerPaused, secPerQuestion }) {
   const [isMuted, setIsMuted] = useState(false);
   const minutes = Math.floor(secondsRemaining / 60);
   const seconds = secondsRemaining % 60;
 
-  const total = 20; // total seconds per question
+  const total = secPerQuestion; // total seconds per question
   const radius = 40;
   const circumference = 2 * Math.PI * radius;
   const progress = Math.max(0, secondsRemaining) / total;

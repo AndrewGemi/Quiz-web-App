@@ -7,6 +7,7 @@ function Question({
   answer,
   secondsRemaining,
   isTimerPaused,
+  secPerQuestion,
 }) {
   return (
     <section className="question-container card flex flex-col gap-4 anim-scale-in">
@@ -15,6 +16,7 @@ function Question({
           dispatch={dispatch}
           secondsRemaining={secondsRemaining || 0}
           isTimerPaused={isTimerPaused}
+          secPerQuestion={secPerQuestion}
         />
         <h4 className="text-right m-0 anim-fade-up">{question.question}</h4>
       </div>

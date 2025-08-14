@@ -329,6 +329,7 @@ export default function App() {
                       question={questions[index]}
                       dispatch={dispatch}
                       answer={answer}
+                      secPerQuestion={SECS_PER_QUESTION}
                       secondsRemaining={secondsRemaining || 0}
                       isTimerPaused={isTimerPaused}
                     />
