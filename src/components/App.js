@@ -32,6 +32,15 @@ const initialState = {
   totalPoints: {},
 };
 
+function shuffle(array) {
+  const a = array.slice(); // don't mutate original
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 function reducer(state, action) {
   console.log("Reducer action:", action.type, action.payload);
 
@@ -125,14 +134,16 @@ function reducer(state, action) {
         const categoryIndex = action.payload;
         const selectedCategory = state.categories[categoryIndex];
         if (!selectedCategory) return state;
+        const shuffled = shuffle(selectedCategory.questions || []);
 
         return {
           ...state,
           currentCategory: categoryIndex,
-          questions: selectedCategory.questions || [],
+          questions: shuffled,
           status: "active",
           index: 0,
           answer: null,
+          currentTeam: state.teams[0] || null,
           points: Object.fromEntries(state.teams.map((team) => [team, 0])),
           secondsRemaining: SECS_PER_QUESTION,
           showTransition: true,

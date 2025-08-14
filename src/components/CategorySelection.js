@@ -23,7 +23,7 @@ function CategorySelection({ categories, onSelect, completedCategories }) {
               className={[
                 "card w-full text-right transition-transform",
                 "active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-purple-500/60",
-                "border border-[#232836] md:text-xl",
+                "border border-[#232836] md:text-xl flex flex-col gap-4",
                 done
                   ? "bg-green-900/20 text-green-200 border-green-700 cursor-not-allowed"
                   : "hover:bg-[#1b2131]",
