@@ -1,70 +1,241 @@
-# Getting Started with Create React App
+# Quizify — Team-Based Quiz Game
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Mobile-friendly, team-vs-team quiz app with categories, countdown timer, last-seconds beeps + “time’s up” buzzer, animated UI, and refresh-proof progress (via session storage). Built with React and Tailwind.
 
-## Available Scripts
+## ✨ Features
 
-In the project directory, you can run:
+- **Teams & Categories**: create teams, pick a category, play round-robin.
+- **Question Flow**: one question at a time, progress bar, sticky “Next/Finish”.
+- **Timer**: circular SVG countdown (default **30s**), **pause/resume**, optional **double “time’s up”** sound, low-time pulse.
+- **Sounds**: short beep for last seconds + buzzer at 0 (file-based). Safe pause handling.
+- **Mobile-first UI**: safe-area aware header/footer, big tap targets, RTL-friendly.
+- **Animations**: fade/slide/stagger without extra libs (CSS keyframes).
+- **No-Repeat Play**: unbiased **Fisher–Yates shuffle** per category; optional global de-dup.
+- **Refresh-Safe**: state persisted to `sessionStorage` and **rehydrated** after reload (with drift-corrected timer).
 
-### `npm start`
+> Power-Ups: **Under construction / to be added soon.**
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+---
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## 🧱 Tech Stack
 
-### `npm test`
+- **React** (hooks, reducer state machine)
+- **Tailwind CSS** (plus a few custom CSS variables)
+- Optional: **Framer Motion** (not required; CSS animations included)
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+---
 
-### `npm run build`
+## 🗂️ Project Structure (key parts)
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+```
+src/
+  App.js                 # reducer, state machine, fetch questions, hydrate/persist
+  components/
+    Header.jsx           # sticky, safe-area aware app bar
+    Main.jsx             # constrained container with bottom padding
+    TeamSetup.jsx        # add/remove teams, start
+    CategorySelection.jsx
+    TeamTransition.jsx   # “next up” overlay
+    Question.jsx
+    Options.jsx
+    Timer.jsx            # SVG timer + sounds
+    Progress.jsx
+    NextButton.jsx
+    Footer.jsx           # sticky action bar
+    Logo.jsx
+public/
+  data/questions.json    # categories + questions
+  sounds/beep.mp3
+  sounds/timesup.mp3
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+---
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## 🔢 Data Format
 
-### `npm run eject`
+`public/data/questions.json` expects:
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+```json
+{
+  "categories": [
+    {
+      "title": "General Knowledge",
+      "questions": [
+        {
+          "id": "gk-001",
+          "question": "What is the capital of France?",
+          "options": ["Paris", "Rome", "Madrid", "Berlin"],
+          "correctOption": 0,
+          "points": 10
+        }
+      ]
+    }
+  ]
+}
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+**Required**: `question`, `options[]`, `correctOption` (0-based).  
+**Recommended**: `id` (for global de-dup), `points` (per-question scoring).
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+---
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## ▶️ Getting Started
 
-## Learn More
+### Prereqs
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+- Node 18+ (or 20+), npm/yarn/pnpm
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### Install & Run
 
-### Code Splitting
+```bash
+# clone
+git clone <your-repo-url>
+cd <your-repo>
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+# install deps
+npm i
 
-### Analyzing the Bundle Size
+# start dev server
+npm run start
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+### Build
 
-### Making a Progressive Web App
+```bash
+npm run build
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+---
 
-### Advanced Configuration
+## ⚙️ Configuration
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+### Timer length
 
-### Deployment
+`SECS_PER_QUESTION` in `App.js`:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+```js
+const SECS_PER_QUESTION = 30;
+```
 
-### `npm run build` fails to minify
+### Sounds
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+Place files in `public/sounds/`:
+
+```
+beep.mp3         # short beep for last seconds (e.g., last 3–5s)
+timesup.mp3      # buzzer at 0 (can be configured to play twice)
+```
+
+Wired to:
+
+- **Stop on pause** (no lingering audio; cancels in-flight play promises)
+- **Respect autoplay policies** (plays after first user interaction)
+
+### Shuffle
+
+Shuffling happens **on category select** (recommended) or **once on data load** for fixed per-session order.
+
+- Unbiased **Fisher–Yates**, `O(n)` time.
+- Guarantees each question appears once per playthrough (unless your source has duplicates).
+
+### Persistence (Refresh-Proof)
+
+- Saves a snapshot to **`sessionStorage`** (`quizify_state_v1`) after meaningful state changes.
+- On reload, **hydrates** the state if the `categories` signature matches the current questions file.
+- Corrects for **timer drift** by subtracting elapsed seconds, and auto-fills the correct answer if time expired during reload.
+
+Switch to `localStorage` if you want cross-tab persistence.
+
+---
+
+## 🧠 State Machine (high level)
+
+`status` values:
+
+- `loading` → fetch `questions.json`
+- `selectingTeams` → enter teams
+- `selectingCategory` → pick a category
+- `active` → team transition → question + timer → next
+- `finished` → category results or final leaderboard
+- `error` → fetch/load failure
+
+Key actions: `dataReceived`, `dataFailed`, `teamsConfirmed`, `selectCategory`, `tick`, `toggleTimer`, `newAnswer`, `nextQuestion`, `categoryComplete`, `restart`, `hydrate`.
+
+---
+
+## 🧩 Power-Ups
+
+**Under construction / to be added soon.**  
+Planned examples: 50/50, Freeze (5s), Double Next, Skip. Each will have clear stock, cooldowns, and reducer-driven effects with UI badges.
+
+---
+
+## ♿ Accessibility & RTL
+
+- Buttons ≥ **44×44px**, visible focus states, ARIA labels (timer & CTAs).
+- Right-aligned question text works for Arabic/RTL.
+- Sticky bars respect **safe-area insets** on iOS.
+
+---
+
+## 🎨 Styling & Motion
+
+- Tailwind for layout + custom CSS variables in `index.css`.
+- CSS keyframes for **fade/slide/scale**; staggered options via index-based delays.
+- Optional Framer Motion for physics-style animations.
+
+---
+
+## 🚀 Deployment
+
+### Netlify / Vercel
+
+- Push repo, select framework “React” / CRA/Vite as applicable.
+- Ensure `public/data/questions.json` + `public/sounds/*` are included.
+- If hosting on a subpath, `process.env.PUBLIC_URL` guards your JSON fetch.
+
+### GitHub Pages
+
+- `npm run build` → publish `/build`.
+- If using a custom base path, set `homepage` in `package.json` or adjust `PUBLIC_URL`.
+
+---
+
+## 🧪 Testing Ideas (optional)
+
+- **Reducer**: tick, answer scoring, category transitions, restart, hydrate.
+- **Timer**: fake timers to assert tick cadence & pause behavior.
+- **Audio**: ensure sounds stop on pause and do not fire while paused.
+- **Options**: selection, correct/wrong classes, (future) 50/50 hiding.
+- **Hydration**: mock `sessionStorage`; verify drift correction and discard on questions.json change.
+
+---
+
+## ⚠️ Known Gotchas
+
+- **Mobile audio policies**: audio plays only after a user gesture; iOS silent switch mutes audio.
+- **Data changes**: if `questions.json` changes, old snapshots are discarded via a categories signature check.
+- **“Random every step”**: avoid independent random picks per question—shuffle once and walk the array by index.
+
+---
+
+## 🗺️ Roadmap
+
+- Implement power-ups (50/50, Freeze, Double Next, Skip) with reducer cases + UI badges.
+- Seeded shuffle option for tournaments.
+- “Resume game?” modal when a saved snapshot is detected.
+- Export results (CSV/JSON) per category and final leaderboard.
+
+---
+
+## 📄 License
+
+MIT (or replace with your preferred license).
+
+---
+
+## 🙌 Credits
+
+- Brand color `#6b05fa` and gradients used throughout the UI.
+- SFX suggestions from free libraries like Pixabay/Mixkit.
+- Thanks to the team for testing on mobile devices!
