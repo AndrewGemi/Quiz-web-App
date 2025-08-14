@@ -8,7 +8,7 @@ function TeamSetup({ onConfirm }) {
     e.preventDefault();
     const name = teamInput.trim();
     if (!name) return;
-    setTeams([...teams, name]);
+    setTeams((t) => [...t, name]);
     setTeamInput("");
   }
 
@@ -21,31 +21,36 @@ function TeamSetup({ onConfirm }) {
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col items-center">
-      {/* Title */}
-      <h1 className="w-full text-center font-extrabold tracking-tight text-3xl sm:text-4xl md:text-6xl mb-6 self-center">
-        Welcome to <span className="text-[#6b05fa]">Quizify</span>
+    <div className="w-full mx-auto px-4 sm:px-6 py-6 flex flex-col gap-4 items-center">
+      {/* Titles */}
+      <h1 className="text-center font-extrabold tracking-tight text-3xl sm:text-4xl lg:text-7xl mb-2">
+        Welcome to{" "}
+        <span className="text-[color:var(--color-theme)]">Quizify</span>
       </h1>
-      <h2 className="w-full text-center text-lg sm:text-xl md:text-3xl font-semibold mb-6 self-center">
+      <h2 className="text-center text-lg sm:text-xl md:text-3xl font-semibold mb-5">
         Enter Team Names
       </h2>
 
-      {/* Input */}
-      <form
-        onSubmit={handleAddTeam}
-        className="w-1/2 md:w-3/4 lg:w-3/4 self-center mb-6 mx-auto"
-      >
-        <div className="flex flex-col md:flex-row gap-3 md:gap-4">
+      {/* Input row */}
+      <form onSubmit={handleAddTeam} className="w-full max-w-[720px] mb-5">
+        <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3">
           <input
             type="text"
             value={teamInput}
             onChange={(e) => setTeamInput(e.target.value)}
             placeholder="Enter team name..."
-            className="w-full md:flex-1 rounded-lg border-2 border-purple-200 focus:outline-none focus:border-purple-400 px-4 py-3 md:py-4 text-base sm:text-xl text-black"
+            className="w-full rounded-[14px] border border-[#2a2f3c] bg-[#0d1018] text-[1.6rem] text-[var(--color-light)] px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500/60"
+            aria-label="Team name"
           />
           <button
             type="submit"
-            className="w-full md:w-auto rounded-lg bg-purple-600 text-white px-5 py-3 md:py-4 text-base sm:text-lg font-medium hover:bg-purple-700 transition-colors"
+            className="btn w-full sm:w-auto"
+            style={{
+              background: "linear-gradient(90deg,#7c3aed,#5b21b6)",
+              borderRadius: 14,
+              padding: "12px 18px",
+              fontWeight: 700,
+            }}
           >
             Add Team
           </button>
@@ -53,19 +58,20 @@ function TeamSetup({ onConfirm }) {
       </form>
 
       {/* Teams list */}
-      <div className="w-1/2 md:w-3/4 mb-8 self-center">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 self-ce">
+      <div className="w-full max-w-[720px] mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {teams.map((team, index) => (
             <div
               key={team}
-              className="w-full rounded-lg border border-[#6b05fa] p-3 sm:p-4 flex items-center justify-between"
+              className="card flex items-center justify-between border border-[#6b05fa] rounded-[14px] p-3 anim-fade-up"
+              style={{ animationDelay: `${index * 50}ms` }}
             >
-              <span className="text-base sm:text-lg md:text-xl font-medium truncate">
+              <span className="text-[1.6rem] font-medium truncate">
                 Team {index + 1}: {team}
               </span>
               <button
                 onClick={() => removeTeam(team)}
-                className="ml-3 shrink-0 rounded-md px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50"
+                className="ml-3 shrink-0 rounded-md px-3 py-2 text-sm font-semibold text-red-500 hover:bg-red-500/10"
                 aria-label={`Remove ${team}`}
                 type="button"
               >
@@ -75,9 +81,8 @@ function TeamSetup({ onConfirm }) {
           ))}
         </div>
 
-        {/* Scroll guard if many teams on mobile */}
         {teams.length > 6 && (
-          <div className="mt-2 text-center text-sm text-gray-500">
+          <div className="mt-2 text-center text-sm text-gray-400">
             Tip: scroll for more teams
           </div>
         )}
@@ -87,12 +92,19 @@ function TeamSetup({ onConfirm }) {
       {teams.length >= 2 ? (
         <button
           onClick={handleSubmit}
-          className="w-1/2 md:w-auto md:self-center rounded-lg bg-green-500 text-white px-8 py-3 text-lg font-semibold hover:bg-green-600 transition-colors"
+          className="btn w-full sm:w-auto"
+          style={{
+            background: "linear-gradient(90deg,#10b981,#059669)",
+            borderRadius: 14,
+            padding: "12px 22px",
+            fontSize: "1.7rem",
+            fontWeight: 800,
+          }}
         >
           Start Quiz
         </button>
       ) : (
-        <p className="text-center opacity-70 text-base sm:text-lg">
+        <p className="text-center opacity-80 text-[1.5rem]">
           Add at least 2 teams to continue
         </p>
       )}

@@ -12,9 +12,8 @@ import Question from "./Question";
 import ResetButton from "./ResetButton";
 import TeamSetup from "./TeamSetup";
 import TeamTransition from "./TeamTransition";
-import Timer from "./Timer";
 
-const SECS_PER_QUESTION = 30;
+const SECS_PER_QUESTION = 20;
 
 const initialState = {
   questions: [],
@@ -76,10 +75,8 @@ function reducer(state, action) {
           secondsRemaining: state.isTimerPaused
             ? state.secondsRemaining
             : Math.max(0, state.secondsRemaining - 1),
-          answer:
-            state.secondsRemaining <= 1
-              ? state.questions[state.index]?.correctOption
-              : state.answer,
+          isTimerPaused:
+            state.secondsRemaining === 0 ? true : state.isTimerPaused,
         };
 
       case "toggleTimer":
@@ -110,10 +107,9 @@ function reducer(state, action) {
           answer: action.payload,
           points: {
             ...state.points,
-            [currentTeam]:
-              isCorrect && state.secondsRemaining > 0
-                ? (state.points[currentTeam] || 0) + (question.points || 0)
-                : state.points[currentTeam] || 0,
+            [currentTeam]: isCorrect
+              ? (state.points[currentTeam] || 0) + (question.points || 0)
+              : state.points[currentTeam] || 0,
           },
           isTimerPaused: true,
         };
@@ -252,7 +248,7 @@ export default function App() {
   });
 
   useEffect(() => {
-    fetch(`${process.env.PUBLIC_URL}/data/questions.json`)
+    fetch(`${process.env.PUBLIC_URL}/data/Test.json`)
       .then((r) => r.json())
       .then((data) => dispatch({ type: "dataReceived", payload: data }));
   }, []);
@@ -265,100 +261,98 @@ export default function App() {
       )}
 
       <Main>
-        {status === "loading" && <Loader />}
-        {status === "error" && <Error />}
+        <div className="main px-4 sm:px-6">
+          {status === "loading" && <Loader />}
+          {status === "error" && <Error />}
 
-        {status === "selectingTeams" && (
-          <TeamSetup
-            onConfirm={(teams) =>
-              dispatch({ type: "teamsConfirmed", payload: teams })
-            }
-          />
-        )}
+          {status === "selectingTeams" && (
+            <TeamSetup
+              onConfirm={(teams) =>
+                dispatch({ type: "teamsConfirmed", payload: teams })
+              }
+            />
+          )}
 
-        {status === "selectingCategory" && (
-          <CategorySelection
-            categories={categories || []}
-            onSelect={(index) =>
-              dispatch({ type: "selectCategory", payload: index })
-            }
-            completedCategories={completedCategories || []}
-          />
-        )}
+          {status === "selectingCategory" && (
+            <CategorySelection
+              categories={categories || []}
+              onSelect={(index) =>
+                dispatch({ type: "selectCategory", payload: index })
+              }
+              completedCategories={completedCategories || []}
+            />
+          )}
 
-        {status === "active" && (
-          <>
-            {showTransition ? (
-              <TeamTransition
-                team={currentTeam || "Team"}
-                onContinue={() => dispatch({ type: "hideTransition" })}
-              />
-            ) : (
-              <div className="flex flex-col items-center py-2 w-full">
-                <div className="mb-8 text-center w-full">
-                  <span className="text-xl lg:text-4xl font-semibold">
-                    Current team:{" "}
-                    <span className="text-[#6b05fa]">
-                      {currentTeam || "Unknown"}
-                    </span>
-                  </span>
-                </div>
-
-                <Progress
-                  index={index}
-                  numQuestions={numQuestions}
-                  points={points && currentTeam ? points[currentTeam] || 0 : 0}
-                  totalPoints={
-                    teams?.length ? categoryTotalPoints / teams.length : 0
-                  }
-                  answer={answer}
+          {status === "active" && (
+            <>
+              {showTransition ? (
+                <TeamTransition
+                  team={currentTeam || "Team"}
+                  onContinue={() => dispatch({ type: "hideTransition" })}
                 />
-                <div className="flex flex-col">
-                  <Timer
-                    dispatch={dispatch}
-                    secondsRemaining={secondsRemaining || 0}
-                    isTimerPaused={isTimerPaused}
-                  />
-                </div>
+              ) : (
+                <div className="flex flex-col items-center py-2 w-full">
+                  <div className="mb-8 text-center w-full">
+                    <span className="text-xl lg:text-4xl font-semibold">
+                      Current team:{" "}
+                      <span className="text-[#6b05fa]">
+                        {currentTeam || "Unknown"}
+                      </span>
+                    </span>
+                  </div>
 
-                {questions[index] && (
-                  <Question
-                    question={questions[index]}
-                    dispatch={dispatch}
-                    answer={answer}
-                    secondsRemaining={secondsRemaining || 0}
-                    isTimerPaused={isTimerPaused}
-                  />
-                )}
-
-                <Footer>
-                  <NextButton
+                  <Progress
                     index={index}
                     numQuestions={numQuestions}
-                    dispatch={dispatch}
+                    points={
+                      points && currentTeam ? points[currentTeam] || 0 : 0
+                    }
+                    totalPoints={
+                      teams?.length ? categoryTotalPoints / teams.length : 0
+                    }
                     answer={answer}
                   />
-                </Footer>
-              </div>
-            )}
-          </>
-        )}
 
-        {status === "finished" && (
-          <FinishScreen
-            points={points || {}}
-            totalPoints={totalPoints || {}}
-            categoryTitle={
-              currentCategory !== null && categories?.[currentCategory]
-                ? categories[currentCategory].title
-                : "Quiz Complete"
-            }
-            dispatch={dispatch}
-            hasMoreCategories={
-              (completedCategories?.length || 0) + 1 < (categories?.length || 0)
-            }
-          />
-        )}
+                  {questions[index] && (
+                    <Question
+                      question={questions[index]}
+                      dispatch={dispatch}
+                      answer={answer}
+                      secondsRemaining={secondsRemaining || 0}
+                      isTimerPaused={isTimerPaused}
+                    />
+                  )}
+
+                  <Footer>
+                    <NextButton
+                      index={index}
+                      numQuestions={numQuestions}
+                      dispatch={dispatch}
+                      answer={answer}
+                    />
+                  </Footer>
+                </div>
+              )}
+            </>
+          )}
+
+          {status === "finished" && (
+            <FinishScreen
+              points={points || {}}
+              totalPoints={totalPoints || {}}
+              categoryTitle={
+                currentCategory !== null && categories?.[currentCategory]
+                  ? categories[currentCategory].title
+                  : "Quiz Complete"
+              }
+              dispatch={dispatch}
+              hasMoreCategories={
+                (completedCategories?.length || 0) + 1 <
+                (categories?.length || 0)
+              }
+            />
+          )}
+        </div>
       </Main>
     </div>
   );

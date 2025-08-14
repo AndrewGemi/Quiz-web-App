@@ -5,8 +5,18 @@ function NextButton({ index, numQuestions, dispatch, answer }) {
 
   return (
     <button
-      className="btn btn-ui"
+      className="btn w-full sm:w-auto active:scale-95"
       onClick={() => dispatch({ type: "nextQuestion" })}
+      style={{
+        borderRadius: 14,
+        padding: "14px 18px",
+        fontSize: "1.7rem",
+        fontWeight: 700,
+        background: isLast
+          ? "linear-gradient(90deg,#10b981,#059669)"
+          : "linear-gradient(90deg,#7c3aed,#5b21b6)",
+      }}
+      aria-label={isLast ? "Finish" : "Next"}
     >
       {isLast ? "Finish" : "Next"}
     </button>
