@@ -1,6 +1,6 @@
 # Quizify — Team-Based Quiz Game
 
-Mobile-friendly, team-vs-team quiz app with categories, countdown timer, last-seconds beeps + “time’s up” buzzer, animated UI, and refresh-proof progress (via session storage). Built with React and Tailwind.
+Mobile-friendly, multi-team (supports 2+ teams) quiz app with categories, countdown timer, last-seconds beeps + “time’s up” buzzer, animated UI, and refresh-proof progress (via session storage). Built with React and Tailwind.
 
 ## ✨ Features
 
