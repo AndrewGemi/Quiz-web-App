@@ -15,6 +15,33 @@ import TeamTransition from "./TeamTransition";
 
 const SECS_PER_QUESTION = 20;
 
+const STORAGE_KEY = "quizify:state:v1";
+
+// Only persist what's needed to resume a round
+const PERSIST_KEYS = [
+  "questions",
+  "questionType",
+  "status",
+  "index",
+  "answer",
+  "points",
+  "secondsRemaining",
+  "isTimerPaused",
+  "teams",
+  "currentTeam",
+  "showTransition",
+  "categories",
+  "currentCategory",
+  "completedCategories",
+  "totalPoints",
+];
+
+function serializeState(state) {
+  const out = {};
+  for (const k of PERSIST_KEYS) out[k] = state[k];
+  return out;
+}
+
 const initialState = {
   questions: [],
   questionType: null,
@@ -31,6 +58,7 @@ const initialState = {
   currentCategory: null,
   completedCategories: [],
   totalPoints: {},
+  _loadedFromStorage: false,
 };
 
 function shuffle(array) {
@@ -47,12 +75,19 @@ function reducer(state, action) {
 
   try {
     switch (action.type) {
-      case "dataReceived":
+      case "dataReceived": {
+        const incomingCats = action.payload.categories || [];
         return {
           ...state,
-          categories: action.payload.categories || [],
-          status: "selectingTeams",
+          // If resuming, keep whatever we had; otherwise use fetched categories
+          categories: state.categories?.length
+            ? state.categories
+            : incomingCats,
+          // Only force selectingTeams if we’re truly fresh
+          status: state.status === "loading" ? "selectingTeams" : state.status,
+          _loadedFromStorage: false, // clear the flag
         };
+      }
 
       case "teamsConfirmed":
         const teams = action.payload || [];
@@ -209,12 +244,17 @@ function reducer(state, action) {
         };
       }
 
-      case "restart":
+      case "restart": {
+        // also clear storage
+        try {
+          sessionStorage.removeItem(STORAGE_KEY);
+        } catch {}
         return {
           ...initialState,
           status: "selectingTeams",
-          categories: state.categories, // Keep the loaded categories
+          categories: state.categories, // keep loaded categories
         };
+      }
 
       default:
         console.error("Unknown action type:", action.type);
@@ -227,7 +267,29 @@ function reducer(state, action) {
 }
 
 export default function App() {
-  const [state, dispatch] = useReducer(reducer, initialState);
+  const [state, dispatch] = useReducer(reducer, initialState, (init) => {
+    try {
+      const raw = sessionStorage.getItem(STORAGE_KEY);
+      if (!raw) return init;
+      const saved = JSON.parse(raw);
+      // Merge, but keep "loading" until data arrives; we’ll preserve status in dataReceived
+      return { ...init, ...saved, _loadedFromStorage: true };
+    } catch {
+      return init;
+    }
+  });
+
+  // Persist after each state change
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(serializeState(state))
+      );
+    } catch (e) {
+      console.error("Persist failed", e);
+    }
+  }, [state]);
 
   const {
     questions,
