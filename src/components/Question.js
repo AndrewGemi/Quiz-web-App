@@ -102,7 +102,7 @@ function CompleteReveal({ question, dispatch }) {
     <div className="flex flex-col gap-4 anim-fade-up">
       {/* Question text with inline blanks; fills after reveal */}
       <h4
-        className="m-0 text-right text-[1.2rem] sm:text-[1.4rem] lg:text-3xl leading-normal break-words"
+        className="m-0 text-right text-[1.4rem] sm:text-[1.6rem] lg:text-3xl leading-normal break-words"
         dir="auto"
       >
         {titleNodes}
@@ -122,10 +122,10 @@ function CompleteReveal({ question, dispatch }) {
         <>
           {/* Also show the full answer plainly for clarity/accessibility */}
           <div className="rounded-lg p-4 bg-[rgba(255,255,255,0.04)] flex flex-col gap-3">
-            <div className="text-sm lg:text-xl text-gray-400">
+            <div className="text-base lg:text-xl text-gray-400">
               Correct answer
             </div>
-            <div className="text-lg sm:text-xl lg:text-3xl font-semibold break-words">
+            <div className="text-xl sm:text-2xl lg:text-3xl font-semibold break-words">
               {fullAnswer}
             </div>
           </div>
