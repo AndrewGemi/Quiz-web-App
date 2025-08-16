@@ -39,47 +39,45 @@ function FinishScreen({
 
   return (
     <div className="mx-auto w-full max-w-[760px] px-2 sm:px-0">
-      {hasMoreCategories && (
-        <>
-          <div className="mb-6 text-center">
-            <h2 className="mb-1">{categoryTitle || "Category Complete"}</h2>
-            <p className="opacity-80 mb-4">Category Results</p>
+      <>
+        <div className="mb-6 text-center">
+          <h2 className="mb-1">{categoryTitle || "Category Complete"}</h2>
+          <p className="opacity-80 mb-4">Category Results</p>
 
-            {teamScores.length > 0 ? (
-              <div className="grid gap-3">
-                {teamScores.map(({ team, score }, i) => (
-                  <div
-                    key={team}
-                    className={[
-                      "card border-l-4",
-                      i === 0
-                        ? "bg-yellow-900/15 border-yellow-400"
-                        : "bg-[#141a28] border-purple-500",
-                    ].join(" ")}
-                    style={{ padding: 12 }}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-[1.8rem] font-semibold">
-                        {team}
-                      </span>
-                      <span
-                        className={
-                          i === 0
-                            ? "text-yellow-300 text-[2.2rem] font-bold"
-                            : "text-purple-300 text-[2.2rem] font-bold"
-                        }
-                      >
-                        {score}
-                      </span>
-                    </div>
+          {teamScores.length > 0 ? (
+            <div className="grid gap-3">
+              {teamScores.map(({ team, score }, i) => (
+                <div
+                  key={team}
+                  className={[
+                    "card border-l-4",
+                    i === 0
+                      ? "bg-yellow-900/15 border-yellow-400"
+                      : "bg-[#141a28] border-purple-500",
+                  ].join(" ")}
+                  style={{ padding: 12 }}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-[1.8rem] font-semibold">{team}</span>
+                    <span
+                      className={
+                        i === 0
+                          ? "text-yellow-300 text-[2.2rem] font-bold"
+                          : "text-purple-300 text-[2.2rem] font-bold"
+                      }
+                    >
+                      {score}
+                    </span>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-gray-400">No team scores available</p>
-            )}
-          </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-400">No team scores available</p>
+          )}
+        </div>
 
+        {hasMoreCategories && (
           <div className="flex justify-center">
             <button
               className="btn"
@@ -89,8 +87,8 @@ function FinishScreen({
               Next Category
             </button>
           </div>
-        </>
-      )}
+        )}
+      </>
 
       {!hasMoreCategories && (
         <>

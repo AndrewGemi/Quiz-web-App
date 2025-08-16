@@ -17,6 +17,7 @@ const SECS_PER_QUESTION = 20;
 
 const initialState = {
   questions: [],
+  questionType: null,
   status: "loading",
   index: 0,
   answer: null,
@@ -140,6 +141,7 @@ function reducer(state, action) {
           ...state,
           currentCategory: categoryIndex,
           questions: shuffled,
+          questionType: selectedCategory.type || null,
           status: "active",
           index: 0,
           answer: null,
@@ -242,6 +244,7 @@ export default function App() {
     currentCategory,
     completedCategories,
     totalPoints,
+    questionType,
   } = state;
 
   const numQuestions = questions?.length || 0;
@@ -259,7 +262,7 @@ export default function App() {
   });
 
   useEffect(() => {
-    fetch(`${process.env.PUBLIC_URL}/data/Test.json`)
+    fetch(`${process.env.PUBLIC_URL}/data/questions.json`)
       .then((r) => r.json())
       .then((data) => dispatch({ type: "dataReceived", payload: data }));
   }, []);
@@ -326,6 +329,7 @@ export default function App() {
 
                   {questions[index] && (
                     <Question
+                      questionType={questionType}
                       question={questions[index]}
                       dispatch={dispatch}
                       answer={answer}

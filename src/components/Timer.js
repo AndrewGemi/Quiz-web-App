@@ -78,7 +78,7 @@ function Timer({ dispatch, secondsRemaining, isTimerPaused, secPerQuestion }) {
     if (secondsRemaining < 0) return; // safety
 
     // last 3…2…1 beeps
-    if (secondsRemaining > 0 && secondsRemaining <= 5) {
+    if (secondsRemaining === 5) {
       const token = ++playTokenRef.current;
       const a = beepRef.current;
       if (a) {
@@ -109,10 +109,8 @@ function Timer({ dispatch, secondsRemaining, isTimerPaused, secPerQuestion }) {
 
   return (
     <div
-      className={`flex self-center mb-5 anim-fade-in ${
-        lowTime ? "anim-pulse" : ""
-      }`}
-      style={{ gap: 8, padding: 8, borderRadius: 14 }}
+      className={`flex self-center anim-fade-in ${lowTime ? "anim-pulse" : ""}`}
+      style={{ gap: 8, borderRadius: 14 }}
       aria-live="polite"
     >
       <svg width="100" height="100" role="img" aria-label="Question timer">
@@ -157,9 +155,9 @@ function Timer({ dispatch, secondsRemaining, isTimerPaused, secPerQuestion }) {
             {secondsRemaining === 0 ? "⏱" : isTimerPaused ? "▶︎" : "⏸︎"}
           </button>
         </div>
-        <div>
+        <div className="">
           <button
-            className="btn active:scale-95"
+            className="btn active:scale-95 "
             onClick={() => {
               setIsMuted((prev) => !prev);
               const muted = !(beepRef.current?.muted || false);
@@ -167,7 +165,7 @@ function Timer({ dispatch, secondsRemaining, isTimerPaused, secPerQuestion }) {
               if (timesUpRef.current) timesUpRef.current.muted = muted;
             }}
             aria-label="Toggle sound"
-            style={{ minWidth: 60, marginLeft: 6, borderRadius: 14 }}
+            style={{ minWidth: 40, marginLeft: 6, borderRadius: 14 }}
           >
             {isMuted ? "🔇" : "🔈"}
           </button>
