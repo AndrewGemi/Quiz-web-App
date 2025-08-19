@@ -7,7 +7,7 @@ function Progress({ index, numQuestions, points, totalPoints, answer }) {
           Question <strong>{index + 1}</strong> / {numQuestions}
         </p>
         <p className="m-0 text-[1.3rem] md:text-[1.6rem]">
-          <strong>{points}</strong> / {totalPoints}
+          <strong>{Math.ceil(points)}</strong> / {Math.ceil(totalPoints)}
           <span className="text-gray-500"> points</span>
         </p>
       </div>

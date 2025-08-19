@@ -12,9 +12,23 @@ import Question from "./Question";
 import ResetButton from "./ResetButton";
 import TeamSetup from "./TeamSetup";
 import TeamTransition from "./TeamTransition";
+import ExamModeSelection from "./ExamModeSelection";
 
-const SECS_PER_QUESTION = 20;
+/* ============ Exam files & config ============ */
+const EXAM_FILES = {
+  real: `${process.env.PUBLIC_URL}/data/questions_real.json`,
+  trial: `${process.env.PUBLIC_URL}/data/questions_trial.json`,
+  shootout: `${process.env.PUBLIC_URL}/data/questions_shootout.json`,
+};
 
+const MODE_CONFIG = {
+  real: { secsPerQuestion: 20, pointsPerCorrect: "question" }, // use question.points
+  trial: { secsPerQuestion: 20, pointsPerCorrect: "question" }, // use question.points
+  shootout: { secsPerQuestion: 20, pointsPerCorrect: 1 }, // fixed 1 per correct
+};
+const getModeConfig = (mode) => MODE_CONFIG[mode] || MODE_CONFIG.trial;
+
+/* ============ Persistence ============ */
 const STORAGE_KEY = "quizify:state:v1";
 
 // Only persist what's needed to resume a round
@@ -34,6 +48,9 @@ const PERSIST_KEYS = [
   "currentCategory",
   "completedCategories",
   "totalPoints",
+  "examMode",
+  "secsPerQuestion",
+  "pointsPerCorrect",
 ];
 
 function serializeState(state) {
@@ -42,10 +59,14 @@ function serializeState(state) {
   return out;
 }
 
+/* ============ Initial state ============ */
 const initialState = {
   questions: [],
   questionType: null,
-  status: "loading",
+  status: "selectingExam", // show mode picker first
+  examMode: null, // "real" | "trial" | "shootout"
+  secsPerQuestion: 20,
+  pointsPerCorrect: "question",
   index: 0,
   answer: null,
   points: {},
@@ -61,6 +82,7 @@ const initialState = {
   _loadedFromStorage: false,
 };
 
+/* ============ Utils ============ */
 function shuffle(array) {
   const a = array.slice(); // don't mutate original
   for (let i = a.length - 1; i > 0; i--) {
@@ -70,6 +92,7 @@ function shuffle(array) {
   return a;
 }
 
+/* ============ Reducer ============ */
 function reducer(state, action) {
   console.log("Reducer action:", action.type, action.payload);
 
@@ -79,17 +102,34 @@ function reducer(state, action) {
         const incomingCats = action.payload.categories || [];
         return {
           ...state,
-          // If resuming, keep whatever we had; otherwise use fetched categories
           categories: state.categories?.length
             ? state.categories
             : incomingCats,
-          // Only force selectingTeams if we’re truly fresh
-          status: state.status === "loading" ? "selectingTeams" : state.status,
-          _loadedFromStorage: false, // clear the flag
+          _loadedFromStorage: false,
         };
       }
 
-      case "teamsConfirmed":
+      case "setExamMode": {
+        const mode = action.payload; // "real" | "trial" | "shootout"
+        const cfg = getModeConfig(mode);
+        return {
+          ...state,
+          examMode: mode,
+          secsPerQuestion: cfg.secsPerQuestion,
+          pointsPerCorrect: cfg.pointsPerCorrect,
+          status: "selectingTeams",
+          // reset round-specific bits
+          questions: [],
+          index: 0,
+          answer: null,
+          points: Object.fromEntries((state.teams || []).map((t) => [t, 0])),
+          secondsRemaining: null,
+          isTimerPaused: false,
+          currentCategory: null,
+        };
+      }
+
+      case "teamsConfirmed": {
         const teams = action.payload || [];
         return {
           ...state,
@@ -99,18 +139,16 @@ function reducer(state, action) {
           currentTeam: teams[0] || null,
           status: "selectingCategory",
         };
+      }
 
       case "dataFailed":
-        return {
-          ...state,
-          status: "error",
-        };
+        return { ...state, status: "error" };
 
       case "start":
         return {
           ...state,
           status: "active",
-          secondsRemaining: SECS_PER_QUESTION,
+          secondsRemaining: state.secsPerQuestion,
           isTimerPaused: false,
         };
 
@@ -125,12 +163,9 @@ function reducer(state, action) {
         };
 
       case "toggleTimer":
-        return {
-          ...state,
-          isTimerPaused: !state.isTimerPaused,
-        };
+        return { ...state, isTimerPaused: !state.isTimerPaused };
 
-      case "setTeams":
+      case "setTeams": {
         const newTeams = action.payload || [];
         return {
           ...state,
@@ -138,6 +173,7 @@ function reducer(state, action) {
           points: newTeams.reduce((acc, team) => ({ ...acc, [team]: 0 }), {}),
           currentTeam: newTeams[0] || null,
         };
+      }
 
       case "newAnswer": {
         const question = state.questions[state.index];
@@ -147,30 +183,34 @@ function reducer(state, action) {
         const currentTeam = state.currentTeam;
         if (!currentTeam) return state;
 
+        const pointsToAdd = isCorrect
+          ? typeof state.pointsPerCorrect === "number"
+            ? state.pointsPerCorrect
+            : question.points || 0
+          : 0;
+
         return {
           ...state,
           answer: action.payload,
           points: {
             ...state.points,
-            [currentTeam]: isCorrect
-              ? (state.points[currentTeam] || 0) + (question.points || 0)
-              : state.points[currentTeam] || 0,
+            [currentTeam]: (state.points[currentTeam] || 0) + pointsToAdd,
           },
           isTimerPaused: true,
         };
       }
 
       case "hideTransition":
-        return {
-          ...state,
-          showTransition: false,
-        };
+        return { ...state, showTransition: false };
 
       case "selectCategory": {
         const categoryIndex = action.payload;
         const selectedCategory = state.categories[categoryIndex];
         if (!selectedCategory) return state;
-        const shuffled = shuffle(selectedCategory.questions || []);
+        let shuffled = selectedCategory.questions || [];
+        if (selectedCategory.randomize) {
+          shuffled = shuffle(selectedCategory.questions || []);
+        }
 
         return {
           ...state,
@@ -182,19 +222,17 @@ function reducer(state, action) {
           answer: null,
           currentTeam: state.teams[0] || null,
           points: Object.fromEntries(state.teams.map((team) => [team, 0])),
-          secondsRemaining: SECS_PER_QUESTION,
+          secondsRemaining: state.secsPerQuestion,
           showTransition: true,
         };
       }
 
       case "categoryComplete": {
-        // Calculate new total points by adding current category points
         const newTotalPoints = { ...state.totalPoints };
         Object.entries(state.points || {}).forEach(([team, score]) => {
           newTotalPoints[team] = (newTotalPoints[team] || 0) + (score || 0);
         });
 
-        // Check if this was the last category
         const newCompletedCategories = [
           ...state.completedCategories,
           state.currentCategory,
@@ -225,11 +263,9 @@ function reducer(state, action) {
             status: "finished",
             showTransition: false,
             secondsRemaining: null,
-            // keep `points` as-is so the Finish screen can show the category scoreboard
           };
         }
 
-        // Normal advance: rotate team and reset timer
         const currentTeamIndex = state.teams.indexOf(state.currentTeam);
         const nextTeamIndex = (currentTeamIndex + 1) % state.teams.length;
 
@@ -238,21 +274,21 @@ function reducer(state, action) {
           index: state.index + 1,
           answer: null,
           currentTeam: state.teams[nextTeamIndex] || state.teams[0],
-          secondsRemaining: SECS_PER_QUESTION,
+          secondsRemaining: state.secsPerQuestion,
           showTransition: true,
           isTimerPaused: false,
         };
       }
 
       case "restart": {
-        // also clear storage
         try {
           sessionStorage.removeItem(STORAGE_KEY);
         } catch {}
         return {
           ...initialState,
-          status: "selectingTeams",
-          categories: state.categories, // keep loaded categories
+          status: "selectingExam", // show ExamModeSelection
+          examMode: null, // clear previous choice
+          categories: [], // (optional) clear to avoid stale data from old mode
         };
       }
 
@@ -262,17 +298,17 @@ function reducer(state, action) {
     }
   } catch (error) {
     console.error("Reducer error:", error, "Action:", action);
-    return state; // Return current state on error to prevent crashes
+    return state;
   }
 }
 
+/* ============ App component ============ */
 export default function App() {
   const [state, dispatch] = useReducer(reducer, initialState, (init) => {
     try {
       const raw = sessionStorage.getItem(STORAGE_KEY);
       if (!raw) return init;
       const saved = JSON.parse(raw);
-      // Merge, but keep "loading" until data arrives; we’ll preserve status in dataReceived
       return { ...init, ...saved, _loadedFromStorage: true };
     } catch {
       return init;
@@ -291,6 +327,28 @@ export default function App() {
     }
   }, [state]);
 
+  // Load categories for the chosen exam mode
+  useEffect(() => {
+    // If we resumed and already have categories, don’t refetch
+    if (state._loadedFromStorage && state.categories?.length) return;
+    if (!state.examMode) return; // wait until a mode is picked
+
+    const url = EXAM_FILES[state.examMode] || EXAM_FILES.real;
+    let cancelled = false;
+
+    fetch(url)
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled) return;
+        dispatch({ type: "dataReceived", payload: data });
+      })
+      .catch(() => !cancelled && dispatch({ type: "dataFailed" }));
+
+    return () => {
+      cancelled = true;
+    };
+  }, [state.examMode, state._loadedFromStorage]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const {
     questions,
     status,
@@ -307,39 +365,30 @@ export default function App() {
     completedCategories,
     totalPoints,
     questionType,
+    secsPerQuestion,
   } = state;
 
   const numQuestions = questions?.length || 0;
   const categoryTotalPoints =
     questions?.reduce((prev, cur) => prev + (cur?.points || 0), 0) || 0;
 
-  console.log("App render:", {
-    status,
-    currentCategory,
-    categoriesLength: categories?.length || 0,
-    completedCategoriesLength: completedCategories?.length || 0,
-    hasCategories: !!categories,
-    hasTotalPoints: !!totalPoints,
-    teams: teams?.length || 0,
-  });
-
-  useEffect(() => {
-    fetch(`${process.env.PUBLIC_URL}/data/questions.json`)
-      .then((r) => r.json())
-      .then((data) => dispatch({ type: "dataReceived", payload: data }));
-  }, []);
-
   return (
     <div className="app">
       <Header />
-      {(status === "active" || status === "finished") && (
-        <ResetButton dispatch={dispatch} />
-      )}
+      {status !== "selectingExam" && <ResetButton dispatch={dispatch} />}
 
       <Main>
         <div className="main px-4 sm:px-6">
           {status === "loading" && <Loader />}
           {status === "error" && <Error />}
+
+          {status === "selectingExam" && (
+            <ExamModeSelection
+              onPick={(mode) =>
+                dispatch({ type: "setExamMode", payload: mode })
+              }
+            />
+          )}
 
           {status === "selectingTeams" && (
             <TeamSetup
@@ -352,9 +401,7 @@ export default function App() {
           {status === "selectingCategory" && (
             <CategorySelection
               categories={categories || []}
-              onSelect={(index) =>
-                dispatch({ type: "selectCategory", payload: index })
-              }
+              onSelect={(i) => dispatch({ type: "selectCategory", payload: i })}
               completedCategories={completedCategories || []}
             />
           )}
@@ -395,7 +442,7 @@ export default function App() {
                       question={questions[index]}
                       dispatch={dispatch}
                       answer={answer}
-                      secPerQuestion={SECS_PER_QUESTION}
+                      secPerQuestion={secsPerQuestion}
                       secondsRemaining={secondsRemaining || 0}
                       isTimerPaused={isTimerPaused}
                     />
