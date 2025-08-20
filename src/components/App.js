@@ -256,7 +256,6 @@ function reducer(state, action) {
 
       case "nextQuestion": {
         const isLastQuestion = state.index >= state.questions.length - 1;
-
         if (isLastQuestion) {
           return {
             ...state,
@@ -266,14 +265,67 @@ function reducer(state, action) {
           };
         }
 
-        const currentTeamIndex = state.teams.indexOf(state.currentTeam);
-        const nextTeamIndex = (currentTeamIndex + 1) % state.teams.length;
+        const teamCount = state.teams.length;
+        const currentIdx = state.teams.indexOf(state.currentTeam);
+        const nextTeamIndex = (currentIdx + 1) % teamCount;
+        const endOfRound = state.examMode === "shootout" && nextTeamIndex === 0;
+
+        let nextTeams = state.teams;
+        let nextPoints = state.points;
+        let nextCurrentTeam;
+
+        if (endOfRound) {
+          // --- End of round: consider elimination ---
+          const scores = state.teams.map((t) => ({
+            team: t,
+            score: state.points[t] || 0,
+          }));
+          const values = scores.map((s) => s.score);
+          const min = Math.min(...values);
+          const max = Math.max(...values);
+
+          if (max !== min) {
+            // eliminate all teams tied at the minimum score
+            const survivors = scores
+              .filter((s) => s.score > min)
+              .map((s) => s.team);
+
+            if (survivors.length >= 2) {
+              nextTeams = survivors;
+              nextPoints = survivors.reduce((acc, t) => {
+                acc[t] = state.points[t] || 0;
+                return acc;
+              }, {});
+              // After a round reset, start next round from the first survivor
+              nextCurrentTeam = survivors[0];
+            } else {
+              // Only one team meaningfully ahead -> finish now
+              const winner =
+                scores.find((s) => s.score === max)?.team || state.currentTeam;
+              return {
+                ...state,
+                status: "finished",
+                showTransition: false,
+                secondsRemaining: null,
+                currentTeam: winner,
+              };
+            }
+          } else {
+            // Perfect tie across all teams -> no elimination this round
+            nextCurrentTeam = state.teams[0];
+          }
+        } else {
+          // Normal rotation within the round
+          nextCurrentTeam = state.teams[nextTeamIndex];
+        }
 
         return {
           ...state,
           index: state.index + 1,
           answer: null,
-          currentTeam: state.teams[nextTeamIndex] || state.teams[0],
+          teams: nextTeams,
+          points: nextPoints,
+          currentTeam: nextCurrentTeam,
           secondsRemaining: state.secsPerQuestion,
           showTransition: true,
           isTimerPaused: false,

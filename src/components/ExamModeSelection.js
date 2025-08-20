@@ -53,7 +53,7 @@ export default function ExamModeSelection({ onPick }) {
       <div className="grid gap-4 sm:grid-cols-1 mt-4">
         <Card
           onClick={() => onPick("real")}
-          title="Real Exam"
+          title="Normal Exam"
           subtitle="Live set used for the official round. Uses question points from the real pool."
           meta="Default: 20s per question"
           className="border border-indigo-400/30 bg-indigo-900/20 hover:bg-indigo-900/30"
