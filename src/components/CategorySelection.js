@@ -1,44 +1,107 @@
-// CategorySelection.jsx
-function CategorySelection({ categories, onSelect, completedCategories }) {
+import React from "react";
+import { motion } from "framer-motion";
+
+const CATEGORY_ICONS = ["📚", "🧪", "🌍", "💡", "🎨", "🚀", "⚡", "🧠"];
+
+function CategorySelection({ categories, onSelect, completedCategories = [] }) {
   if (!categories || categories.length === 0) {
     return (
-      <div className="text-center text-gray-400 py-8">
+      <div className="glass-card p-12 text-center text-slate-400 max-w-md mx-auto my-8">
+        <div className="w-10 h-10 border-4 border-violet-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
         Loading categories...
       </div>
     );
   }
 
-  return (
-    <div className="mx-auto w-full max-w-[720px] flex flex-col gap-6">
-      <h2 className="text-center mb-4 md:text-5xl">Choose category</h2>
+  const completedCount = completedCategories.length;
+  const totalCount = categories.length;
+  const progressPercent = Math.round((completedCount / totalCount) * 100);
 
-      <div className="grid gap-5">
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="w-full max-w-7xl mx-auto px-4 py-8 flex flex-col items-center"
+    >
+      <div className="text-center mb-10">
+        <span className="inline-block px-5 py-2 rounded-full text-xs sm:text-sm font-extrabold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-500/10 border border-emerald-300 dark:border-emerald-500/20 mb-4 shadow-md">
+          Stage 3 • Topic Selection ({completedCount}/{totalCount} Completed)
+        </span>
+        <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-slate-900 dark:text-white mb-4">
+          Select <span className="text-gradient-cyan">Category Level</span>
+        </h1>
+        <p className="text-slate-700 dark:text-slate-300 text-lg sm:text-2xl max-w-2xl mx-auto font-medium">
+          Choose an unlocked topic level to start the question round.
+        </p>
+
+        {/* Global Category Progress Bar */}
+        <div className="w-full max-w-lg mx-auto mt-6 bg-slate-200 dark:bg-white/5 rounded-full h-3.5 p-0.5 border border-slate-300 dark:border-white/10 overflow-hidden shadow-inner">
+          <div
+            className="h-full bg-gradient-to-r from-cyan-500 via-teal-400 to-emerald-400 rounded-full transition-all duration-500"
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
         {categories.map((category, index) => {
           const done = completedCategories.includes(index);
+          const icon = CATEGORY_ICONS[index % CATEGORY_ICONS.length];
+
           return (
-            <button
-              key={category.title}
-              onClick={() => onSelect(index)}
+            <motion.button
+              key={category.title || index}
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.08 }}
+              whileHover={done ? {} : { y: -6, scale: 1.02 }}
+              whileTap={done ? {} : { scale: 0.98 }}
+              onClick={() => !done && onSelect(index)}
               disabled={done}
               className={[
-                "card w-full text-right transition-transform",
-                "active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-purple-500/60",
-                "border border-[#232836] md:text-xl flex flex-col gap-4",
+                "glass-card p-8 sm:p-10 text-left flex flex-col justify-between transition-all duration-300 relative overflow-hidden group min-h-[220px] shadow-xl",
                 done
-                  ? "bg-green-900/20 text-green-200 border-green-700 cursor-not-allowed"
-                  : "hover:bg-[#1b2131]",
+                  ? "opacity-70 border-emerald-300 dark:border-emerald-500/30 bg-emerald-50/80 dark:bg-emerald-950/10 cursor-not-allowed"
+                  : "border-slate-200 dark:border-white/10 hover:border-cyan-500 hover:shadow-[0_20px_40px_rgba(6,182,212,0.18)] dark:hover:shadow-[0_0_30px_rgba(6,182,212,0.25)] cursor-pointer",
               ].join(" ")}
-              style={{ padding: "14px 16px", borderRadius: 14, minHeight: 56 }}
             >
-              <h3 className="m-0">{category.title}</h3>
-              {done && (
-                <p className="m-0 text-[1.2rem] opacity-70">Completed</p>
-              )}
-            </button>
+              <div className="flex items-start justify-between gap-4 mb-6">
+                <div className="flex items-center gap-3">
+                  <span className="text-4xl group-hover:scale-110 transition-transform">
+                    {icon}
+                  </span>
+                  <span className="w-10 h-10 rounded-2xl bg-cyan-100 dark:bg-cyan-500/10 border border-cyan-300 dark:border-cyan-500/20 flex items-center justify-center text-cyan-800 dark:text-cyan-400 font-black text-lg shrink-0">
+                    L{index + 1}
+                  </span>
+                </div>
+
+                <span
+                  className={[
+                    "text-xs sm:text-sm font-extrabold px-4 py-1.5 rounded-full border",
+                    done
+                      ? "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-500/30"
+                      : "bg-cyan-100 dark:bg-cyan-500/10 text-cyan-800 dark:text-cyan-300 border-cyan-300 dark:border-cyan-500/30",
+                  ].join(" ")}
+                >
+                  {done ? "✓ Completed" : "Unlocked"}
+                </span>
+              </div>
+
+              <div>
+                <h3 dir="auto" className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white group-hover:text-cyan-700 dark:group-hover:text-cyan-300 transition-colors mb-2">
+                  {category.title}
+                </h3>
+                {category.description && (
+                  <p dir="auto" className="text-base text-slate-700 dark:text-slate-400 line-clamp-2 font-medium">
+                    {category.description}
+                  </p>
+                )}
+              </div>
+            </motion.button>
           );
         })}
       </div>
-    </div>
+    </motion.div>
   );
 }
 

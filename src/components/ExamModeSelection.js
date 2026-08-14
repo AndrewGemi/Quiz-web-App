@@ -1,63 +1,104 @@
-// src/ExamModeSelection.jsx
+import React from "react";
 import { motion } from "framer-motion";
 
 export default function ExamModeSelection({ onPick }) {
-  const Card = ({ onClick, title, subtitle, meta, className }) => (
-    <motion.button
-      onClick={onClick}
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-      className={
-        "rounded-xl p-5 text-left shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 " +
-        className
-      }
-      aria-label={title}
-    >
-      <div className="text-xl lg:text-2xl font-bold mb-1">{title}</div>
-      <p className="text-sm lg:text-lg opacity-80">{subtitle}</p>
-      <div className="mt-3 text-xs lg:text-base opacity-70">{meta}</div>
-    </motion.button>
-  );
+  const modes = [
+    {
+      id: "trial",
+      title: "Trial Exam",
+      subtitle: "Standard practice mode using custom category pools and question points.",
+      meta: "20s timer per question",
+      icon: "⚡",
+      badge: "Practice Mode",
+      borderColor: "border-violet-200 dark:border-violet-500/30 hover:border-violet-500",
+      glowColor: "hover:shadow-[0_20px_40px_rgba(124,58,237,0.18)] dark:hover:shadow-[0_0_35px_rgba(139,92,246,0.3)]",
+      badgeBg: "bg-violet-100 dark:bg-violet-500/10 text-violet-800 dark:text-violet-300 border-violet-300 dark:border-violet-500/30",
+    },
+    {
+      id: "shootout",
+      title: "Penalty Shootout",
+      subtitle: "Rapid-fire team battle! Fast turns with 1 point per correct answer.",
+      meta: "20s timer per question",
+      icon: "🔥",
+      badge: "Team vs Team",
+      borderColor: "border-emerald-200 dark:border-emerald-500/30 hover:border-emerald-500",
+      glowColor: "hover:shadow-[0_20px_40px_rgba(16,185,129,0.18)] dark:hover:shadow-[0_0_35px_rgba(16,185,129,0.3)]",
+      badgeBg: "bg-emerald-100 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-500/30",
+    },
+    {
+      id: "real",
+      title: "Official Exam",
+      subtitle: "Full-scale competitive exam with the live official question bank.",
+      meta: "20s timer per question",
+      icon: "🏆",
+      badge: "Official Tournament",
+      borderColor: "border-cyan-200 dark:border-cyan-500/30 hover:border-cyan-500",
+      glowColor: "hover:shadow-[0_20px_40px_rgba(6,182,212,0.18)] dark:hover:shadow-[0_0_35px_rgba(6,182,212,0.3)]",
+      badgeBg: "bg-cyan-100 dark:bg-cyan-500/10 text-cyan-800 dark:text-cyan-300 border-cyan-300 dark:border-cyan-500/30",
+    },
+  ];
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 py-10">
-      <h1 className="text-3xl sm:text-4xl lg:text-6xl font-extrabold text-center mb-6">
-        Choose Exam Mode
-      </h1>
-      <p className="text-center opacity-80 mb-8 lg:text-lg">
-        Pick how you want to play. You can change this later by restarting.
-      </p>
+    <div className="w-full max-w-7xl mx-auto px-4 py-8 flex flex-col items-center">
+      {/* Hero Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="text-center mb-12"
+      >
+        <span className="inline-block px-5 py-2 rounded-full text-xs sm:text-sm font-extrabold uppercase tracking-wider text-purple-800 dark:text-purple-300 bg-purple-100 dark:bg-purple-500/10 border border-purple-300 dark:border-purple-500/20 mb-4 shadow-md">
+          Stage 1 • Experience Picker
+        </span>
+        <h1 className="text-5xl sm:text-7xl lg:text-8xl font-black text-slate-900 dark:text-white tracking-tight mb-4">
+          Choose Your <span className="text-gradient-purple">Exam Mode</span>
+        </h1>
+        <p className="text-slate-700 dark:text-slate-300 text-xl sm:text-3xl max-w-3xl mx-auto font-medium leading-relaxed">
+          Select how you want to compete today. You can restart anytime to try a different mode.
+        </p>
+      </motion.div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        {/* Trial Exam */}
-        <Card
-          onClick={() => onPick("trial")}
-          title="Trial Exam"
-          subtitle="Standard quiz flow. Uses question points and your selected categories."
-          meta="Default: 20s per question"
-          className="border border-purple-400/30 bg-purple-900/20 hover:bg-purple-900/30"
-        />
+      {/* Cards Widescreen Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full">
+        {modes.map((mode, index) => (
+          <motion.div
+            key={mode.id}
+            initial={{ opacity: 0, y: 25 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: index * 0.1 }}
+            whileHover={{ y: -8 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => onPick(mode.id)}
+            className={`glass-card p-8 sm:p-10 flex flex-col justify-between cursor-pointer border ${mode.borderColor} ${mode.glowColor} transition-all duration-300 group`}
+          >
+            <div>
+              <div className="flex items-center justify-between mb-6">
+                <span className="text-6xl group-hover:scale-110 transition-transform duration-300">
+                  {mode.icon}
+                </span>
+                <span
+                  className={`text-xs sm:text-sm font-extrabold px-4 py-2 rounded-full border ${mode.badgeBg}`}
+                >
+                  {mode.badge}
+                </span>
+              </div>
 
-        {/* Penalty Shootout */}
-        <Card
-          onClick={() => onPick("shootout")}
-          title="Penalty Shootout"
-          subtitle="Quick-fire kicks! Each correct = 1 point. Rotates teams each question."
-          meta="Default: 20s per question" // <- fixed to match config
-          className="border border-emerald-400/30 bg-emerald-900/20 hover:bg-emerald-900/30"
-        />
-      </div>
+              <h2 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white mb-3 group-hover:text-violet-700 dark:group-hover:text-violet-300 transition-colors">
+                {mode.title}
+              </h2>
+              <p className="text-slate-700 dark:text-slate-300 text-lg sm:text-xl leading-relaxed mb-8 font-medium">
+                {mode.subtitle}
+              </p>
+            </div>
 
-      {/* OPTIONAL: Real Exam tile (uncomment if you want users to pick the real exam explicitly) */}
-
-      <div className="grid gap-4 sm:grid-cols-1 mt-4">
-        <Card
-          onClick={() => onPick("real")}
-          title="Normal Exam"
-          subtitle="Live set used for the official round. Uses question points from the real pool."
-          meta="Default: 20s per question"
-          className="border border-indigo-400/30 bg-indigo-900/20 hover:bg-indigo-900/30"
-        />
+            <div className="pt-6 border-t border-slate-200 dark:border-white/10 flex items-center justify-between text-base text-slate-700 dark:text-slate-400 font-extrabold">
+              <span>{mode.meta}</span>
+              <span className="text-violet-700 dark:text-violet-400 text-xl font-black group-hover:translate-x-2 transition-transform">
+                Select →
+              </span>
+            </div>
+          </motion.div>
+        ))}
       </div>
     </div>
   );

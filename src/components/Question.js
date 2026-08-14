@@ -1,9 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
 import Options from "./Options";
-import Timer from "./Timer";
 
-/* Split an answer string into parts for blanks.
-   Supports "/", "," and Arabic "،" as separators. */
+/* Split an answer string into parts for blanks. */
 function splitAnswerParts(s) {
   if (!s) return [];
   return String(s)
@@ -31,9 +30,8 @@ function useAnswers(question) {
   }, [question]);
 }
 
-/* Build React nodes: replace each placeholder (..., …, or ____ ) with <mark>answer</mark> */
+/* Build React nodes: replace each placeholder with <mark>answer</mark> */
 function fillWithAnswersNodes(text, parts) {
-  // Matches: 3+ dots, 1+ ellipsis chars, 3+ underscores, or 3+ Tatweel (ـ)
   const PLACEHOLDER_RE = /(\.{3,}|…+|_+|ـ{3,})/gu;
 
   const nodes = [];
@@ -50,7 +48,7 @@ function fillWithAnswersNodes(text, parts) {
         key={`ans-${offset}-${idx}`}
         dir="auto"
         title={val}
-        className="px-1 rounded bg-teal-400/20 text-teal-300 font-bold ring-1 ring-teal-500/30"
+        className="px-3 py-1 rounded-xl bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 font-black border border-emerald-300 dark:border-emerald-500/40 shadow-sm dark:shadow-[0_0_15px_rgba(16,185,129,0.35)] mx-1 inline-block"
       >
         {val}
       </mark>
@@ -64,16 +62,15 @@ function fillWithAnswersNodes(text, parts) {
   return nodes.length ? nodes : [text];
 }
 
-/* “Complete” flow: Show Answer -> Add Score / Skip */
+/* Fill-in-the-blank reveal card */
 function CompleteReveal({ question, dispatch }) {
   const [revealed, setRevealed] = useState(false);
   const [locked, setLocked] = useState(false);
 
-  const parts = useAnswers(question); // pieces that fill the blanks
+  const parts = useAnswers(question);
   const fullAnswer = parts.join(" / ") || "—";
   const points = typeof question.points === "number" ? question.points : 10;
 
-  // Your reducer scores by index. For “complete”, use index 0 as the correct slot.
   const correctIndex =
     typeof question.correctOption === "number" ? question.correctOption : 0;
   const wrongIndex =
@@ -99,68 +96,68 @@ function CompleteReveal({ question, dispatch }) {
   }
 
   return (
-    <div className="flex flex-col gap-4 anim-fade-up">
-      {/* Question text with inline blanks; fills after reveal */}
-      <h4
-        className="m-0 text-right text-[1.4rem] sm:text-[1.6rem] lg:text-3xl leading-normal break-words"
-        dir="auto"
+    <div className="flex flex-col gap-6 w-full">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.97 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.25 }}
+        className="w-full rounded-2xl p-4 sm:p-6 glass-card border border-emerald-300 dark:border-emerald-500/30 bg-emerald-50/70 dark:bg-card shadow-sm dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_8px_25px_rgba(0,0,0,0.3)] relative overflow-hidden text-center flex flex-col items-center justify-center min-h-[110px]"
       >
-        {titleNodes}
-      </h4>
+        <div className="absolute -top-20 inset-x-0 h-28 bg-emerald-500/10 dark:bg-emerald-500/15 blur-2xl pointer-events-none rounded-full" />
+        <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider text-emerald-900 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-500/15 border border-emerald-300 dark:border-emerald-500/30 mb-2 shadow-sm">
+          <span>✏️</span>
+          <span>Fill in the Blank</span>
+        </div>
+        <h3
+          className="text-lg sm:text-2xl lg:text-3xl font-black leading-relaxed text-slate-900 dark:text-white break-words relative z-10 max-w-4xl"
+          dir="auto"
+        >
+          {titleNodes}
+        </h3>
+      </motion.div>
 
       {!revealed ? (
         <button
           type="button"
-          className="btn w-full sm:w-auto self-end active:scale-95"
+          className="btn-primary self-end text-xl sm:text-2xl px-10 py-5 rounded-2xl shadow-xl"
           onClick={() => setRevealed(true)}
-          aria-label="Show Answer"
-          style={{ borderRadius: 14, padding: "12px 16px" }}
         >
-          Show Answer
+          👁 Show Answer
         </button>
       ) : (
-        <>
-          {/* Also show the full answer plainly for clarity/accessibility */}
-          <div className="rounded-lg p-4 bg-[rgba(255,255,255,0.04)] flex flex-col gap-3">
-            <div className="text-base lg:text-xl text-gray-400">
-              Correct answer
-            </div>
-            <div className="text-xl sm:text-2xl lg:text-3xl font-semibold break-words">
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col gap-6 w-full"
+        >
+          <div className="rounded-3xl p-6 bg-emerald-50/90 dark:bg-white/5 border border-emerald-300 dark:border-emerald-500/30 flex flex-col gap-2 shadow-[0_0_25px_rgba(16,185,129,0.15)]">
+            <span className="text-xs font-black uppercase tracking-widest text-emerald-900 dark:text-emerald-400">
+              Verified Correct Answer
+            </span>
+            <div dir="auto" className="text-2xl sm:text-4xl font-black text-emerald-950 dark:text-emerald-300 break-words">
               {fullAnswer}
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-2 justify-end">
+          <div className="flex flex-col sm:flex-row gap-4 justify-end">
             <button
               type="button"
-              className="btn w-full sm:w-auto active:scale-95"
+              className="btn-primary btn-emerald text-xl px-10 py-5"
               onClick={handleCorrect}
               disabled={locked}
-              style={{
-                borderRadius: 14,
-                padding: "12px 16px",
-                fontWeight: 700,
-                background: "linear-gradient(90deg,#10b981,#059669)",
-              }}
             >
-              Add Score (+{points})
+              ✓ Award Points (+{points})
             </button>
             <button
               type="button"
-              className="btn w-full sm:w-auto active:scale-95"
+              className="btn-secondary text-xl px-8 py-5"
               onClick={handleSkip}
               disabled={locked}
-              style={{
-                borderRadius: 14,
-                padding: "12px 16px",
-                fontWeight: 700,
-                background: "linear-gradient(90deg,#6b7280,#4b5563)",
-              }}
             >
-              Skip (0)
+              ✕ Skip Question (0 pts)
             </button>
           </div>
-        </>
+        </motion.div>
       )}
     </div>
   );
@@ -168,35 +165,69 @@ function CompleteReveal({ question, dispatch }) {
 
 export default function Question({
   question,
-  dispatch,
+  dispatch = () => {},
   answer,
-  secondsRemaining,
-  isTimerPaused,
-  secPerQuestion,
 }) {
   const isMCQ = Array.isArray(question?.options) && question.options.length > 0;
+  const points = typeof question.points === "number" ? question.points : 10;
+
+  // Keyboard shortcut listener for MCQ answers (1-4 or A-D)
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if (!isMCQ || answer !== null) return;
+      const key = e.key.toUpperCase();
+      let selectedIdx = null;
+
+      if (key === "1" || key === "A") selectedIdx = 0;
+      else if (key === "2" || key === "B") selectedIdx = 1;
+      else if (key === "3" || key === "C") selectedIdx = 2;
+      else if (key === "4" || key === "D") selectedIdx = 3;
+
+      if (selectedIdx !== null && selectedIdx < (question.options?.length || 0)) {
+        dispatch({ type: "newAnswer", payload: selectedIdx });
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isMCQ, answer, question.options, dispatch]);
 
   return (
-    <section className="question-container card flex flex-col gap-4 anim-scale-in">
-      {/* Timer row */}
+    <motion.section
+      initial={{ opacity: 0, scale: 0.98, y: 15 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      className="w-full max-w-7xl mx-auto glass-card border-2 border-purple-200/90 dark:border-purple-500/40 p-8 sm:p-10 flex flex-col gap-6 shadow-2xl rounded-3xl backdrop-blur-xl bg-white/95 dark:bg-[#120826]/95"
+    >
+      {/* Question Header Badge Bar */}
+      <div className="flex items-center justify-between gap-3 pb-4 border-b border-purple-200 dark:border-purple-500/25">
+        <div className="flex items-center gap-2.5">
+          <span className="px-4 py-1.5 rounded-full text-xs sm:text-sm font-black uppercase tracking-wider text-purple-900 dark:text-purple-200 bg-purple-100 dark:bg-purple-500/20 border border-purple-300 dark:border-purple-400/30 shadow-sm">
+            🎮 {isMCQ ? "Multiple Choice" : "Fill in the Blank"}
+          </span>
+          <span className="px-4 py-1.5 rounded-full text-xs sm:text-sm font-black uppercase tracking-wider text-amber-950 dark:text-amber-300 bg-gradient-to-r from-amber-100 via-yellow-50 to-amber-100 dark:bg-amber-500/20 border border-amber-300 dark:border-amber-400/30 shadow-sm">
+            ⭐ {points} pts
+          </span>
+        </div>
+      </div>
 
-      <Timer
-        dispatch={dispatch}
-        secondsRemaining={secondsRemaining || 0}
-        isTimerPaused={isTimerPaused}
-        secPerQuestion={secPerQuestion}
-      />
-
+      {/* Question Content inside Wayground Stage Box */}
       {isMCQ ? (
-        <>
-          <h4 className="text-right text-[1.4rem] sm:text-[1.6rem] lg:text-3xl leading-normal ">
-            {question.question}
-          </h4>
+        <div className="flex flex-col gap-6 w-full">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.2 }}
+            className="w-full rounded-2xl p-8 sm:p-12 glass-card border border-purple-200 dark:border-purple-400/35 bg-slate-50/80 dark:bg-[#0f131d]/70 shadow-sm dark:shadow-xl text-center flex flex-col items-center justify-center min-h-[180px] sm:min-h-[220px]"
+          >
+            <h2 dir="auto" className="text-2xl sm:text-4xl lg:text-5xl font-extrabold leading-relaxed text-slate-900 dark:text-white break-words max-w-5xl drop-shadow-sm dark:drop-shadow-md">
+              {question.question}
+            </h2>
+          </motion.div>
           <Options question={question} dispatch={dispatch} answer={answer} />
-        </>
+        </div>
       ) : (
         <CompleteReveal question={question} dispatch={dispatch} />
       )}
-    </section>
+    </motion.section>
   );
 }

@@ -1,25 +1,23 @@
+import React from "react";
+import { motion } from "framer-motion";
+
 function NextButton({ index, numQuestions, dispatch, answer }) {
   if (answer === null) return null;
 
   const isLast = index >= numQuestions - 1;
 
   return (
-    <button
-      className="btn w-full sm:w-auto active:scale-95"
+    <motion.button
+      initial={{ opacity: 0, scale: 0.9, y: 10 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      whileHover={{ scale: 1.03 }}
+      whileTap={{ scale: 0.97 }}
       onClick={() => dispatch({ type: "nextQuestion" })}
-      style={{
-        borderRadius: 14,
-        padding: "14px 18px",
-        fontSize: "1.7rem",
-        fontWeight: 700,
-        background: isLast
-          ? "linear-gradient(90deg,#10b981,#059669)"
-          : "linear-gradient(90deg,#7c3aed,#5b21b6)",
-      }}
-      aria-label={isLast ? "Finish" : "Next"}
+      className={`btn-primary ${isLast ? "btn-emerald" : ""} text-lg px-7 py-3 rounded-2xl w-full sm:w-auto shadow-2xl self-end mt-3`}
+      aria-label={isLast ? "Finish Category" : "Next Question"}
     >
-      {isLast ? "Finish" : "Next"}
-    </button>
+      {isLast ? "🏆 Complete Category" : "Next Question →"}
+    </motion.button>
   );
 }
 

@@ -1,7 +1,10 @@
+import React from "react";
+import { motion } from "framer-motion";
+
 function ResetButton({ dispatch }) {
   const handleReset = () => {
     const confirmReset = window.confirm(
-      "Are you sure you want to restart the quiz? All progress will be lost."
+      "Are you sure you want to restart the quiz? All current progress will be reset."
     );
     if (confirmReset) {
       dispatch({ type: "restart" });
@@ -9,14 +12,16 @@ function ResetButton({ dispatch }) {
   };
 
   return (
-    <button
-      className="fixed top-4 right-4 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-full 
-            transition-all duration-200 flex items-center gap-2 shadow-md hover:shadow-lg transform hover:scale-105 z-50 text-sm lg:text-xl"
+    <motion.button
+      whileHover={{ scale: 1.05, y: -2 }}
+      whileTap={{ scale: 0.95 }}
       onClick={handleReset}
+      className="fixed bottom-4 left-4 sm:bottom-6 sm:left-6 z-[60] bg-rose-50/90 hover:bg-rose-100 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 text-rose-700 hover:text-rose-900 dark:text-rose-300 dark:hover:text-rose-100 border border-rose-200 hover:border-rose-300 dark:border-rose-500/30 dark:hover:border-rose-500/50 rounded-full px-5 py-2.5 flex items-center gap-2.5 text-sm sm:text-base font-black shadow-md dark:shadow-[0_4_15px_rgba(244,63,94,0.15)] backdrop-blur-xl transition-all cursor-pointer"
+      aria-label="Restart Quiz"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        className="h-5 w-5"
+        className="h-4 w-4 text-rose-600 dark:text-rose-400"
         viewBox="0 0 20 20"
         fill="currentColor"
       >
@@ -26,8 +31,8 @@ function ResetButton({ dispatch }) {
           clipRule="evenodd"
         />
       </svg>
-      Reset Quiz
-    </button>
+      <span>Restart</span>
+    </motion.button>
   );
 }
 
