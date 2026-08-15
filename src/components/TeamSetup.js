@@ -11,14 +11,14 @@ const PRESET_TEAMS = [
 ];
 
 const TEAM_BADGE_STYLES = [
-  { bg: "bg-violet-100 dark:bg-violet-500/20 text-violet-800 dark:text-violet-300 border-violet-300 dark:border-violet-500/40", icon: "🟣" },
-  { bg: "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-500/40", icon: "🟢" },
-  { bg: "bg-cyan-100 dark:bg-cyan-500/20 text-cyan-800 dark:text-cyan-300 border-cyan-300 dark:border-cyan-500/40", icon: "🔵" },
-  { bg: "bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-500/40", icon: "🟡" },
-  { bg: "bg-pink-100 dark:bg-pink-500/20 text-pink-800 dark:text-pink-300 border-pink-300 dark:border-pink-500/40", icon: "🔴" },
+  { bg: "bg-violet-600 text-white border-violet-500", icon: "🟣" },
+  { bg: "bg-emerald-600 text-white border-emerald-500", icon: "🟢" },
+  { bg: "bg-cyan-600 text-white border-cyan-500", icon: "🔵" },
+  { bg: "bg-amber-500 text-slate-950 border-amber-400", icon: "🟡" },
+  { bg: "bg-pink-600 text-white border-pink-500", icon: "🔴" },
 ];
 
-function TeamSetup({ onConfirm }) {
+function TeamSetup({ onConfirm, secsPerQuestion = 20, onSetSecsPerQuestion }) {
   const [teamInput, setTeamInput] = useState("");
   const [teams, setTeams] = useState([]);
 
@@ -53,7 +53,7 @@ function TeamSetup({ onConfirm }) {
       className="w-full max-w-6xl mx-auto px-4 py-8 flex flex-col items-center"
     >
       <div className="text-center mb-10">
-        <span className="inline-block px-5 py-2 rounded-full text-xs sm:text-sm font-extrabold uppercase tracking-wider text-cyan-800 dark:text-cyan-300 bg-cyan-100 dark:bg-cyan-500/10 border border-cyan-300 dark:border-cyan-500/20 mb-4 shadow-md">
+        <span className="inline-block px-5 py-2 rounded-full text-xs sm:text-sm font-black uppercase tracking-wider text-white bg-cyan-600 border border-cyan-500 mb-4 shadow-md">
           Stage 2 • Tournament Rosters
         </span>
         <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-slate-900 dark:text-white mb-4">
@@ -152,6 +152,30 @@ function TeamSetup({ onConfirm }) {
               No teams registered yet. Type a name above or click <span className="text-violet-800 dark:text-violet-400 font-bold">Quick Preset Team Name</span>!
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Pre-Game Timer Quick-Adjust Pill */}
+      <div className="flex flex-wrap items-center justify-center gap-3 p-3 sm:p-4 rounded-2xl glass-card border border-purple-200 dark:border-purple-500/30 bg-white/90 dark:bg-[#120826]/90 shadow-md mb-6">
+        <span className="text-sm font-black text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+          <span>⏱️</span>
+          <span>Question Timer:</span>
+        </span>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {[10, 15, 20, 30, 45, 60].map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => onSetSecsPerQuestion && onSetSecsPerQuestion(s)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
+                secsPerQuestion === s
+                  ? "bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md scale-105 border border-violet-500"
+                  : "bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-slate-200 border border-slate-300 dark:border-white/15 hover:bg-slate-200 dark:hover:bg-white/20"
+              }`}
+            >
+              {s}s
+            </button>
+          ))}
         </div>
       </div>
 

@@ -4,6 +4,7 @@ import BackgroundCanvas from "./BackgroundCanvas";
 import CategorySelection from "./CategorySelection";
 import Error from "./Error";
 import ExamModeSelection from "./ExamModeSelection";
+import ExcelUploadModal from "./ExcelUploadModal";
 import FinishScreen from "./FinishScreen";
 import Footer from "./Footer";
 import Loader from "./Loader";
@@ -71,6 +72,9 @@ const initialState = {
   index: 0,
   answer: null,
   points: {},
+  prevPoints: {},
+  lastScoredTeam: null,
+  lastPointsEarned: 0,
   secondsRemaining: null,
   isTimerPaused: false,
   teams: [],
@@ -101,29 +105,41 @@ function reducer(state, action) {
         const incomingCats = action.payload.categories || [];
         return {
           ...state,
-          categories: state.categories?.length
-            ? state.categories
-            : incomingCats,
+          categories: incomingCats,
           _loadedFromStorage: false,
         };
       }
 
+      case "setSecsPerQuestion": {
+        const secs = parseInt(action.payload, 10) || 20;
+        return {
+          ...state,
+          secsPerQuestion: secs,
+          secondsRemaining: state.status === "active" ? secs : state.secondsRemaining,
+        };
+      }
+
       case "setExamMode": {
-        const mode = action.payload;
+        const payload = action.payload;
+        const mode = typeof payload === "object" ? payload.mode : payload;
+        const customCats = typeof payload === "object" ? payload.customCategories : null;
         const cfg = getModeConfig(mode);
         return {
           ...state,
           examMode: mode,
-          secsPerQuestion: cfg.secsPerQuestion,
+          secsPerQuestion: state.secsPerQuestion || cfg.secsPerQuestion,
           pointsPerCorrect: cfg.pointsPerCorrect,
           status: "selectingTeams",
+          categories: customCats?.length ? customCats : [],
           questions: [],
           index: 0,
           answer: null,
           points: Object.fromEntries((state.teams || []).map((t) => [t, 0])),
-          secondsRemaining: null,
+          secondsRemaining: state.secsPerQuestion || cfg.secsPerQuestion,
           isTimerPaused: false,
           currentCategory: null,
+          completedCategories: [],
+          _loadedFromStorage: false,
         };
       }
 
@@ -191,6 +207,9 @@ function reducer(state, action) {
         return {
           ...state,
           answer: action.payload,
+          prevPoints: { ...state.points },
+          lastScoredTeam: currentTeam,
+          lastPointsEarned: pointsToAdd,
           points: {
             ...state.points,
             [currentTeam]: (state.points[currentTeam] || 0) + pointsToAdd,
@@ -208,8 +227,20 @@ function reducer(state, action) {
         };
 
       case "selectCategory": {
-        const categoryIndex = action.payload;
-        const selectedCategory = state.categories[categoryIndex];
+        let selectedCategory = null;
+        let catIdentifier = null;
+
+        if (typeof action.payload === "number") {
+          selectedCategory = state.categories[action.payload];
+          catIdentifier = selectedCategory?.title || action.payload;
+        } else if (typeof action.payload === "object" && action.payload !== null) {
+          selectedCategory = action.payload;
+          catIdentifier = selectedCategory.title;
+        } else if (typeof action.payload === "string") {
+          selectedCategory = state.categories.find((c) => c.title === action.payload);
+          catIdentifier = action.payload;
+        }
+
         if (!selectedCategory) return state;
         let shuffled = selectedCategory.questions || [];
         if (selectedCategory.randomize) {
@@ -218,12 +249,15 @@ function reducer(state, action) {
 
         return {
           ...state,
-          currentCategory: categoryIndex,
+          currentCategory: catIdentifier,
           questions: shuffled,
           questionType: selectedCategory.type || null,
           status: "active",
           index: 0,
           answer: null,
+          prevPoints: Object.fromEntries(state.teams.map((team) => [team, 0])),
+          lastScoredTeam: null,
+          lastPointsEarned: 0,
           currentTeam: state.teams[0] || null,
           points: Object.fromEntries(state.teams.map((team) => [team, 0])),
           secondsRemaining: state.secsPerQuestion,
@@ -254,6 +288,9 @@ function reducer(state, action) {
           questions: [],
           index: 0,
           answer: null,
+          prevPoints: {},
+          lastScoredTeam: null,
+          lastPointsEarned: 0,
           points: Object.fromEntries(state.teams.map((team) => [team, 0])),
           showTransition: true,
         };
@@ -343,6 +380,9 @@ function reducer(state, action) {
           teams: tiedTeams,
           currentTeam: tiedTeams[0] || null,
           points: tiedTeams.reduce((acc, t) => ({ ...acc, [t]: 0 }), {}),
+          prevPoints: tiedTeams.reduce((acc, t) => ({ ...acc, [t]: 0 }), {}),
+          lastScoredTeam: null,
+          lastPointsEarned: 0,
           totalPoints: tiedTeams.reduce((acc, t) => ({ ...acc, [t]: 0 }), {}),
           questions: [],
           index: 0,
@@ -420,25 +460,62 @@ export default function App() {
     }
   }, [state]);
 
+  const [isExcelModalOpen, setIsExcelModalOpen] = useState(false);
+  const [customCategories, setCustomCategories] = useState(null);
+  const [customSummary, setCustomSummary] = useState(null);
+
+  function handleExcelImportSuccess(categories, summary) {
+    setCustomCategories(categories);
+    setCustomSummary(summary);
+  }
+
+  function handleClearCustomCategories() {
+    setCustomCategories(null);
+    setCustomSummary(null);
+  }
+
   useEffect(() => {
     if (state._loadedFromStorage && state.categories?.length) return;
     if (!state.examMode) return;
+    if (customCategories?.length) return;
 
-    const url = EXAM_FILES[state.examMode] || EXAM_FILES.real;
+    const fileName =
+      state.examMode === "trial"
+        ? "questions_trial.json"
+        : state.examMode === "shootout"
+        ? "questions_shootout.json"
+        : "questions_real.json";
+
+    const primaryUrl = `${process.env.PUBLIC_URL || ""}/data/${fileName}`;
     let cancelled = false;
 
-    fetch(url)
-      .then((r) => r.json())
+    fetch(primaryUrl)
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
       .then((data) => {
         if (cancelled) return;
         dispatch({ type: "dataReceived", payload: data });
       })
-      .catch(() => !cancelled && dispatch({ type: "dataFailed" }));
+      .catch((err) => {
+        console.warn("Primary fetch failed, attempting relative fallback:", err);
+        fetch(`./data/${fileName}`)
+          .then((r) => r.json())
+          .then((data) => {
+            if (cancelled) return;
+            dispatch({ type: "dataReceived", payload: data });
+          })
+          .catch((finalErr) => {
+            console.error("All fetch attempts failed for question bank:", finalErr);
+            if (!cancelled) dispatch({ type: "dataFailed" });
+          });
+      });
 
     return () => {
       cancelled = true;
     };
-  }, [state.examMode, state._loadedFromStorage]);
+  }, [state.examMode, state._loadedFromStorage, customCategories]);
 
   const {
     questions,
@@ -446,6 +523,9 @@ export default function App() {
     index,
     answer,
     points,
+    prevPoints,
+    lastScoredTeam,
+    lastPointsEarned,
     secondsRemaining,
     isTimerPaused,
     currentTeam,
@@ -466,8 +546,18 @@ export default function App() {
   return (
     <div className="app-shell min-h-screen text-slate-900 dark:text-slate-100 relative">
       <BackgroundCanvas theme={theme} />
+      
+      {/* Excel Upload Modal */}
+      <ExcelUploadModal
+        isOpen={isExcelModalOpen}
+        onClose={() => setIsExcelModalOpen(false)}
+        onImportSuccess={(cats, summary) => {
+          handleExcelImportSuccess(cats, summary);
+        }}
+      />
+
       {/* Floating Logo in Top Left */}
-      <div className="fixed top-4 left-4 sm:left-6 z-40 glass-card px-4 py-2 border-purple-200/90 dark:border-purple-500/30 backdrop-blur-xl bg-white/95 dark:bg-[#120826]/90 rounded-2xl shadow-md dark:shadow-xl">
+      <div className="fixed top-4 left-4 sm:left-6 z-40 glass-card px-4 py-2 border-purple-200/90 dark:border-purple-500/30 backdrop-blur-xl bg-white/95 dark:bg-[#120826]/90 rounded-2xl shadow-md dark:shadow-xl select-none">
         <Logo />
       </div>
 
@@ -528,7 +618,18 @@ export default function App() {
               >
                 <ExamModeSelection
                   onPick={(mode) =>
-                    dispatch({ type: "setExamMode", payload: mode })
+                    dispatch({
+                      type: "setExamMode",
+                      payload: { mode, customCategories },
+                    })
+                  }
+                  onOpenExcelModal={() => setIsExcelModalOpen(true)}
+                  customCategories={customCategories}
+                  customSummary={customSummary}
+                  onClearCustomCategories={handleClearCustomCategories}
+                  secsPerQuestion={secsPerQuestion}
+                  onSetSecsPerQuestion={(s) =>
+                    dispatch({ type: "setSecsPerQuestion", payload: s })
                   }
                 />
               </motion.div>
@@ -545,6 +646,10 @@ export default function App() {
                 <TeamSetup
                   onConfirm={(teams) =>
                     dispatch({ type: "teamsConfirmed", payload: teams })
+                  }
+                  secsPerQuestion={secsPerQuestion}
+                  onSetSecsPerQuestion={(s) =>
+                    dispatch({ type: "setSecsPerQuestion", payload: s })
                   }
                 />
               </motion.div>
@@ -578,10 +683,13 @@ export default function App() {
                 <AnimatePresence mode="wait">
                   {showTransition ? (
                     <TeamTransition
-                      key="team-transition"
+                      key={`team-transition-${index}-${currentTeam}`}
                       team={currentTeam || "Team"}
                       teams={teams || []}
                       points={points || {}}
+                      prevPoints={prevPoints || {}}
+                      lastScoredTeam={lastScoredTeam}
+                      lastPointsEarned={lastPointsEarned}
                       totalPoints={totalPoints || {}}
                       index={index}
                       numQuestions={numQuestions}
@@ -598,7 +706,7 @@ export default function App() {
                     >
                       {/* Prominent Active Team Turn Banner */}
                       <div className="mb-4 text-center w-full max-w-7xl mx-auto">
-                        <div className="inline-flex items-center gap-3.5 px-6 py-2.5 rounded-2xl glass-card border-2 border-purple-200/90 dark:border-purple-500/40 shadow-lg dark:shadow-xl backdrop-blur-xl bg-white/95 dark:bg-card">
+                        <div className="inline-flex items-center gap-3.5 px-6 py-2.5 rounded-2xl glass-card border-2 border-purple-200/90 dark:border-purple-500/40 shadow-lg dark:shadow-xl backdrop-blur-xl bg-white/95 dark:bg-card relative">
                           <span className="text-2xl sm:text-3xl animate-pulse">
                             {teams?.[currentTeam]?.avatar || "🎯"}
                           </span>
@@ -610,9 +718,25 @@ export default function App() {
                               {teams?.[currentTeam]?.name || currentTeam || "Team"}
                             </span>
                           </div>
-                          <span className="px-3.5 py-1 rounded-xl bg-gradient-to-r from-amber-100 via-yellow-50 to-amber-100 dark:bg-amber-500/20 text-amber-950 dark:text-amber-300 font-black text-xs sm:text-sm border border-amber-300 dark:border-amber-400/30 ml-2 shadow-sm">
-                            ⭐ {points && currentTeam ? points[currentTeam] || 0 : 0} pts
-                          </span>
+                          <div className="relative ml-2">
+                            <span className="px-3.5 py-1 rounded-xl bg-gradient-to-r from-amber-100 via-yellow-50 to-amber-100 dark:bg-amber-500/20 text-amber-950 dark:text-amber-300 font-black text-xs sm:text-sm border border-amber-300 dark:border-amber-400/30 shadow-sm flex items-center gap-1">
+                              ⭐ {points && currentTeam ? points[currentTeam] || 0 : 0} pts
+                            </span>
+                            <AnimatePresence>
+                              {answer !== null && lastPointsEarned > 0 && lastScoredTeam === currentTeam && (
+                                <motion.span
+                                  key="turn-score-badge"
+                                  initial={{ opacity: 0, y: 10, scale: 0.5 }}
+                                  animate={{ opacity: 1, y: -26, scale: 1.15 }}
+                                  exit={{ opacity: 0, y: -36, scale: 0.8 }}
+                                  transition={{ type: "spring", stiffness: 350, damping: 15 }}
+                                  className="absolute -top-1 right-0 px-2.5 py-0.5 rounded-full bg-emerald-500 text-white font-black text-xs shadow-lg flex items-center gap-1 pointer-events-none z-20 whitespace-nowrap"
+                                >
+                                  +{lastPointsEarned} pts! ✨
+                                </motion.span>
+                              )}
+                            </AnimatePresence>
+                          </div>
                         </div>
                       </div>
 

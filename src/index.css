@@ -136,6 +136,13 @@ html.light .text-purple-300,
 html.light .text-purple-400 {
   color: #6b21a8 !important;
 }
+html.light .text-purple-700,
+html.light .text-purple-800,
+html.light .text-purple-900,
+html.light .text-purple-950 {
+  color: #3b0764 !important;
+  font-weight: 800 !important;
+}
 
 html.light .text-violet-200,
 html.light .text-violet-300,
@@ -249,7 +256,7 @@ html.light input[type="text"]:focus {
   box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15) !important;
 }
 
-/* Light mode button adaptations */
+/* Light mode button and solid pill adaptations */
 .btn-primary,
 .btn-primary *,
 .btn-emerald,
@@ -267,7 +274,9 @@ button[class*="bg-[#26890c]"] *,
 button[class*="bg-[#10b981]"],
 button[class*="bg-[#10b981]"] *,
 button[class*="bg-[#f43f5e]"],
-button[class*="bg-[#f43f5e]"] * {
+button[class*="bg-[#f43f5e]"] *,
+.badge-solid,
+.badge-solid * {
   color: #ffffff !important;
 }
 
