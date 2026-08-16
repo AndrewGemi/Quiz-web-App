@@ -1,8 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
 
-const CATEGORY_ICONS = ["📚", "🧪", "🌍", "💡", "🎨", "🚀", "⚡", "🧠"];
-
 function CategorySelection({ categories, onSelect, completedCategories = [] }) {
   if (!categories || categories.length === 0) {
     return (

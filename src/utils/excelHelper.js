@@ -8,7 +8,7 @@ function normalizeKey(key) {
   return String(key)
     .trim()
     .toLowerCase()
-    .replace(/[\s_\-\.\/\\:]+/g, "")
+    .replace(/[\s_\-./\\:]+/g, "")
     .replace(/[ً-ْ]/g, "") // remove arabic diacritics
     .replace(/[أإآ]/g, "ا")
     .replace(/ة/g, "ه")

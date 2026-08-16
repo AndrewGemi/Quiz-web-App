@@ -18,12 +18,6 @@ import TeamTransition from "./TeamTransition";
 import Timer, { FullscreenButton, ThemeToggle } from "./Timer";
 
 /* ============ Exam files & config ============ */
-const EXAM_FILES = {
-  real: `${process.env.PUBLIC_URL}/data/questions_real.json`,
-  trial: `${process.env.PUBLIC_URL}/data/questions_trial.json`,
-  shootout: `${process.env.PUBLIC_URL}/data/questions_shootout.json`,
-};
-
 const MODE_CONFIG = {
   real: { secsPerQuestion: 20, pointsPerCorrect: "question" },
   trial: { secsPerQuestion: 20, pointsPerCorrect: "question" },
@@ -515,7 +509,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [state.examMode, state._loadedFromStorage, customCategories]);
+  }, [state.examMode, state._loadedFromStorage, state.categories?.length, customCategories]);
 
   const {
     questions,
@@ -540,8 +534,6 @@ export default function App() {
   } = state;
 
   const numQuestions = questions?.length || 0;
-  const categoryTotalPoints =
-    questions?.reduce((prev, cur) => prev + (cur?.points || 0), 0) || 0;
 
   return (
     <div className="app-shell min-h-screen text-slate-900 dark:text-slate-100 relative">
