@@ -13,6 +13,7 @@ import Main from "./Main";
 import NextButton from "./NextButton";
 import Question from "./Question";
 import ResetButton from "./ResetButton";
+import StartScreen from "./StartScreen";
 import TeamSetup from "./TeamSetup";
 import TeamTransition from "./TeamTransition";
 import Timer, { FullscreenButton, ThemeToggle } from "./Timer";
@@ -59,7 +60,7 @@ function serializeState(state) {
 const initialState = {
   questions: [],
   questionType: null,
-  status: "selectingExam",
+  status: "welcome",
   examMode: null,
   secsPerQuestion: 20,
   pointsPerCorrect: "question",
@@ -95,6 +96,26 @@ function shuffle(array) {
 function reducer(state, action) {
   try {
     switch (action.type) {
+      case "startSetup":
+        return { ...state, status: "selectingExam" };
+
+      case "backToWelcome":
+        return { ...state, status: "welcome" };
+
+      case "backToExamMode":
+        return { ...state, status: "selectingExam" };
+
+      case "backToTeams":
+        return { ...state, status: "selectingTeams" };
+
+      case "jumpToStep": {
+        const step = action.payload;
+        if (["selectingExam", "selectingTeams", "selectingCategory"].includes(step)) {
+          return { ...state, status: step };
+        }
+        return state;
+      }
+
       case "dataReceived": {
         const incomingCats = action.payload.categories || [];
         return {
@@ -138,13 +159,14 @@ function reducer(state, action) {
       }
 
       case "teamsConfirmed": {
-        const teams = action.payload || [];
+        const rawTeams = action.payload || [];
+        const teamNames = rawTeams.map((t) => (typeof t === "string" ? t : t.name));
         return {
           ...state,
-          teams,
-          points: teams.reduce((acc, team) => ({ ...acc, [team]: 0 }), {}),
-          totalPoints: teams.reduce((acc, team) => ({ ...acc, [team]: 0 }), {}),
-          currentTeam: teams[0] || null,
+          teams: teamNames,
+          points: teamNames.reduce((acc, team) => ({ ...acc, [team]: 0 }), {}),
+          totalPoints: teamNames.reduce((acc, team) => ({ ...acc, [team]: 0 }), {}),
+          currentTeam: teamNames[0] || null,
           status: "selectingCategory",
         };
       }
@@ -260,44 +282,50 @@ function reducer(state, action) {
         };
       }
 
-      case "categoryComplete": {
-        const newTotalPoints = { ...state.totalPoints };
-        Object.entries(state.points || {}).forEach(([team, score]) => {
-          newTotalPoints[team] = (newTotalPoints[team] || 0) + (score || 0);
-        });
-
-        const newCompletedCategories = [
-          ...state.completedCategories,
-          state.currentCategory,
-        ];
-        const isLastCategory =
-          newCompletedCategories.length >= state.categories.length;
-
-        return {
-          ...state,
-          completedCategories: newCompletedCategories,
-          totalPoints: newTotalPoints,
-          status: isLastCategory ? "finished" : "selectingCategory",
-          currentCategory: isLastCategory ? state.currentCategory : null,
-          questions: [],
-          index: 0,
-          answer: null,
-          prevPoints: {},
-          lastScoredTeam: null,
-          lastPointsEarned: 0,
-          points: Object.fromEntries(state.teams.map((team) => [team, 0])),
-          showTransition: true,
-        };
-      }
-
+      case "categoryComplete":
       case "nextQuestion": {
         const isLastQuestion = state.index >= state.questions.length - 1;
-        if (isLastQuestion) {
+        if (isLastQuestion || action.type === "categoryComplete") {
+          const newTotalPoints = { ...state.totalPoints };
+          Object.entries(state.points || {}).forEach(([team, score]) => {
+            newTotalPoints[team] = (newTotalPoints[team] || 0) + (Number(score) || 0);
+          });
+
+          const currentCatKey =
+            (typeof state.currentCategory === "object"
+              ? state.currentCategory?.title
+              : state.currentCategory) || state.currentCategory;
+
+          const alreadyCompleted =
+            state.completedCategories.includes(currentCatKey) ||
+            state.completedCategories.some(
+              (c) => (typeof c === "object" ? c.title : c) === currentCatKey
+            );
+
+          const newCompletedCategories = alreadyCompleted
+            ? state.completedCategories
+            : [...state.completedCategories, currentCatKey];
+
+          const totalCategoriesCount = state.categories?.length || 1;
+          const isAllCategoriesCompleted =
+            newCompletedCategories.length >= totalCategoriesCount;
+
           return {
             ...state,
-            status: "finished",
-            showTransition: false,
+            completedCategories: newCompletedCategories,
+            totalPoints: newTotalPoints,
+            status: isAllCategoriesCompleted ? "finished" : "selectingCategory",
+            currentCategory: isAllCategoriesCompleted ? state.currentCategory : null,
+            questions: [],
+            index: 0,
+            answer: null,
+            prevPoints: {},
+            lastScoredTeam: null,
+            lastPointsEarned: 0,
+            points: Object.fromEntries(state.teams.map((team) => [team, 0])),
+            showTransition: true,
             secondsRemaining: null,
+            isTimerPaused: true,
           };
         }
 
@@ -393,9 +421,24 @@ function reducer(state, action) {
         } catch { }
         return {
           ...initialState,
-          status: "selectingExam",
+          status: "welcome",
           examMode: null,
           categories: [],
+          questions: [],
+          teams: [],
+          points: {},
+          prevPoints: {},
+          totalPoints: {},
+          lastScoredTeam: null,
+          lastPointsEarned: 0,
+          currentTeam: null,
+          currentCategory: null,
+          completedCategories: [],
+          index: 0,
+          answer: null,
+          secondsRemaining: null,
+          isTimerPaused: false,
+          _loadedFromStorage: false,
         };
       }
 
@@ -571,7 +614,9 @@ export default function App() {
         )}
       </div>
 
-      {status !== "selectingExam" && <ResetButton dispatch={dispatch} />}
+      {(status === "active" ||
+        status === "selectingCategory" ||
+        status === "selectingTeams") && <ResetButton dispatch={dispatch} />}
 
       <Main>
         <div className="w-full relative z-10 overflow-hidden min-h-[60vh] flex flex-col justify-center">
@@ -600,6 +645,24 @@ export default function App() {
               </motion.div>
             )}
 
+            {status === "welcome" && (
+              <motion.div
+                key="welcome"
+                initial={{ opacity: 0, y: 25, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -25, scale: 0.96 }}
+                transition={{ duration: 0.35, ease: "easeOut" }}
+              >
+                <StartScreen
+                  onStart={() => dispatch({ type: "startSetup" })}
+                  onOpenExcelModal={() => setIsExcelModalOpen(true)}
+                  customCategories={customCategories}
+                  customSummary={customSummary}
+                  onClearCustomCategories={handleClearCustomCategories}
+                />
+              </motion.div>
+            )}
+
             {status === "selectingExam" && (
               <motion.div
                 key="selectingExam"
@@ -615,6 +678,7 @@ export default function App() {
                       payload: { mode, customCategories },
                     })
                   }
+                  onBack={() => dispatch({ type: "backToWelcome" })}
                   onOpenExcelModal={() => setIsExcelModalOpen(true)}
                   customCategories={customCategories}
                   customSummary={customSummary}
@@ -639,6 +703,8 @@ export default function App() {
                   onConfirm={(teams) =>
                     dispatch({ type: "teamsConfirmed", payload: teams })
                   }
+                  onBack={() => dispatch({ type: "backToExamMode" })}
+                  examMode={state.examMode}
                   secsPerQuestion={secsPerQuestion}
                   onSetSecsPerQuestion={(s) =>
                     dispatch({ type: "setSecsPerQuestion", payload: s })
@@ -658,7 +724,10 @@ export default function App() {
                 <CategorySelection
                   categories={categories || []}
                   onSelect={(i) => dispatch({ type: "selectCategory", payload: i })}
+                  onBack={() => dispatch({ type: "backToTeams" })}
                   completedCategories={completedCategories || []}
+                  teams={teams || []}
+                  examMode={state.examMode}
                 />
               </motion.div>
             )}
@@ -750,6 +819,10 @@ export default function App() {
                           answer={answer}
                           index={index}
                           numQuestions={numQuestions}
+                          isLastCategory={
+                            (completedCategories?.length || 0) + 1 >=
+                            (categories?.length || 1)
+                          }
                         />
                       </Footer>
                     </motion.div>

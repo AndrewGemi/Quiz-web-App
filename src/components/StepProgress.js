@@ -7,7 +7,11 @@ const STEPS = [
   { id: "active", label: "Quiz", icon: "🎮" },
 ];
 
-export default function StepProgress({ currentStatus }) {
+export default function StepProgress({ currentStatus, onStepClick }) {
+  if (currentStatus === "welcome") {
+    return null;
+  }
+
   const getStepIndex = (status) => {
     if (status === "selectingExam") return 0;
     if (status === "selectingTeams") return 1;
@@ -23,10 +27,20 @@ export default function StepProgress({ currentStatus }) {
       {STEPS.map((step, idx) => {
         const isCompleted = idx < activeIndex;
         const isActive = idx === activeIndex;
+        const isClickable = isCompleted && onStepClick && currentStatus !== "active" && currentStatus !== "finished";
 
         return (
           <React.Fragment key={step.id}>
-            <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              disabled={!isClickable}
+              onClick={() => isClickable && onStepClick(step.id)}
+              className={`flex items-center gap-1.5 transition-all text-left bg-transparent border-0 p-0 ${
+                isClickable
+                  ? "cursor-pointer hover:opacity-85 hover:scale-105"
+                  : "cursor-default"
+              }`}
+            >
               <div
                 className={[
                   "w-6 h-6 rounded-full font-black text-[10px] flex items-center justify-center border transition-all duration-300 shadow-sm",
@@ -44,7 +58,7 @@ export default function StepProgress({ currentStatus }) {
                 className={[
                   "text-[11px] font-extrabold tracking-tight transition-colors",
                   isActive
-                    ? "text-violet-800 dark:text-violet-300"
+                    ? "text-violet-800 dark:text-violet-300 font-black"
                     : isCompleted
                     ? "text-emerald-800 dark:text-emerald-400"
                     : "text-slate-600 dark:text-slate-500",
@@ -52,7 +66,7 @@ export default function StepProgress({ currentStatus }) {
               >
                 {step.label}
               </span>
-            </div>
+            </button>
 
             {idx < STEPS.length - 1 && (
               <div className="flex-1 h-[2px] mx-2 rounded-full overflow-hidden bg-slate-200 dark:bg-white/10">

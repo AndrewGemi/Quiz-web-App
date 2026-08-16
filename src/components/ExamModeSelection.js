@@ -6,6 +6,7 @@ const TIMER_PRESETS = [10, 15, 20, 30, 45, 60];
 
 export default function ExamModeSelection({
   onPick,
+  onBack,
   onOpenExcelModal,
   customCategories,
   customSummary,
@@ -75,6 +76,21 @@ export default function ExamModeSelection({
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 py-8 flex flex-col items-center">
+      {/* Top Back Navigation */}
+      {onBack && (
+        <div className="w-full max-w-5xl flex items-center justify-start mb-4">
+          <motion.button
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            type="button"
+            onClick={onBack}
+            className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-purple-950/60 border border-slate-300 dark:border-purple-500/30 text-slate-800 dark:text-purple-200 font-black text-sm hover:bg-slate-200 dark:hover:bg-purple-900/60 transition-all flex items-center gap-2 cursor-pointer shadow-sm"
+          >
+            <span>🏠</span>
+            <span>Back to Welcome</span>
+          </motion.button>
+        </div>
+      )}
       {/* Hero Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}

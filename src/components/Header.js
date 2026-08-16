@@ -27,7 +27,7 @@ function Header({
       <header className="fixed inset-x-0 top-0 z-50 px-3 sm:px-6 py-3">
         <div className="max-w-6xl mx-auto glass-card px-5 py-2.5 flex items-center justify-between gap-4 shadow-2xl border-purple-200/80 dark:border-purple-500/30 backdrop-blur-xl bg-white/95 dark:bg-[#120826]/95 rounded-2xl relative overflow-hidden">
           {/* Brand Logo */}
-          <Logo />
+          <Logo onClick={() => !isGameActive && dispatch({ type: "backToWelcome" })} />
 
           {/* Center Content: Wayground Active Turn Team & Progress */}
           {isGameActive ? (
@@ -60,7 +60,12 @@ function Header({
             </div>
           ) : (
             <div className="hidden md:flex items-center justify-center max-w-md w-full">
-              <StepProgress currentStatus={currentStatus} />
+              <StepProgress
+                currentStatus={currentStatus}
+                onStepClick={(stepId) =>
+                  dispatch({ type: "jumpToStep", payload: stepId })
+                }
+              />
             </div>
           )}
 

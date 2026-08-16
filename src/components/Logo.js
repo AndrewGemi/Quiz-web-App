@@ -1,8 +1,13 @@
 import React from "react";
 
-function Logo() {
+function Logo({ onClick }) {
   return (
-    <div className="logo flex items-center gap-2.5 select-none">
+    <div
+      onClick={onClick}
+      className={`logo flex items-center gap-2.5 select-none ${
+        onClick ? "cursor-pointer hover:opacity-90 transition-opacity" : ""
+      }`}
+    >
       <div className="relative flex items-center justify-center">
         {/* Ambient Glow */}
         <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 blur-md opacity-40 dark:opacity-60" />

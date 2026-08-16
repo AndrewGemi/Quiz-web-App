@@ -1,7 +1,14 @@
 import React from "react";
 import { motion } from "framer-motion";
 
-function CategorySelection({ categories, onSelect, completedCategories = [] }) {
+function CategorySelection({
+  categories,
+  onSelect,
+  onBack,
+  completedCategories = [],
+  teams = [],
+  examMode = "trial",
+}) {
   if (!categories || categories.length === 0) {
     return (
       <div className="glass-card p-12 text-center text-slate-400 max-w-md mx-auto my-8">
@@ -19,17 +26,53 @@ function CategorySelection({ categories, onSelect, completedCategories = [] }) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.5 }}
       className="w-full max-w-7xl mx-auto px-4 py-8 flex flex-col items-center"
     >
-      <div className="text-center mb-10">
+      {/* Top Navigation & Match Roster Summary */}
+      <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
+        {onBack && (
+          <motion.button
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            type="button"
+            onClick={onBack}
+            className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-purple-950/60 border border-slate-300 dark:border-purple-500/30 text-slate-800 dark:text-purple-200 font-black text-sm hover:bg-slate-200 dark:hover:bg-purple-900/60 transition-all flex items-center gap-2 cursor-pointer shadow-sm"
+          >
+            <span>⬅</span>
+            <span>Back to Team Setup</span>
+          </motion.button>
+        )}
+
+        {/* Registered Teams Quick Summary */}
+        {teams && teams.length > 0 && (
+          <div className="flex items-center gap-2 px-4 py-1.5 rounded-xl bg-purple-100 dark:bg-purple-950/50 border border-purple-300 dark:border-purple-500/30 text-xs font-black text-purple-950 dark:text-purple-200">
+            <span>👥 {teams.length} Competing Teams:</span>
+            <div className="flex items-center gap-1.5 truncate max-w-xs sm:max-w-md">
+              {teams.map((t, idx) => (
+                <span
+                  key={idx}
+                  className="px-2 py-0.5 rounded-md bg-white dark:bg-purple-900/60 border border-purple-200 dark:border-purple-500/30 truncate"
+                >
+                  {typeof t === "string" ? t : t.name}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Hero Header */}
+      <div className="text-center mb-8">
         <span className="inline-block px-5 py-2 rounded-full text-xs sm:text-sm font-black uppercase tracking-wider text-white bg-emerald-600 border border-emerald-500 mb-4 shadow-md">
           Stage 3 • Topic Selection ({completedCount}/{totalCount} Completed)
         </span>
-        <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-slate-900 dark:text-white mb-4">
-          Select <span className="text-gradient-cyan">Category Level</span>
+        <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-slate-900 dark:text-white mb-3">
+          Select <span className="text-gradient-cyan">Category Round</span>
         </h1>
         <p className="text-slate-700 dark:text-slate-300 text-lg sm:text-2xl max-w-2xl mx-auto font-medium">
-          Choose an unlocked topic level to start the question round.
+          Choose an unlocked topic level to start the multiplayer round.
         </p>
 
         {/* Global Category Progress Bar */}
@@ -49,10 +92,15 @@ function CategorySelection({ categories, onSelect, completedCategories = [] }) {
             completedCategories.includes(index) ||
             completedCategories.includes(category);
           const icon = category.type === "complete" ? "✏️" : "🔘";
+          const qCount = category.questions?.length || 0;
+          const totalPts = category.questions?.reduce(
+            (acc, q) => acc + (typeof q.points === "number" ? q.points : 10),
+            0
+          );
 
           return (
             <motion.button
-              key={category.title}
+              key={category.title || index}
               disabled={done}
               initial={{ opacity: 0, y: 25 }}
               animate={{ opacity: 1, y: 0 }}
@@ -61,43 +109,66 @@ function CategorySelection({ categories, onSelect, completedCategories = [] }) {
               whileTap={done ? {} : { scale: 0.98 }}
               onClick={() => onSelect(category)}
               className={[
-                "glass-card p-8 flex flex-col justify-between text-left transition-all duration-300 relative overflow-hidden group min-h-[220px]",
+                "glass-card p-7 flex flex-col justify-between text-left transition-all duration-300 relative overflow-hidden group min-h-[230px] rounded-3xl",
                 done
                   ? "opacity-60 border-slate-300 dark:border-white/5 bg-slate-100/80 dark:bg-white/[0.02] cursor-not-allowed"
-                  : "border-purple-200/90 dark:border-purple-500/30 hover:border-cyan-500 hover:shadow-[0_20px_40px_rgba(6,182,212,0.18)] dark:hover:shadow-[0_0_35px_rgba(6,182,212,0.25)] cursor-pointer bg-white/95 dark:bg-[#120826]/95",
+                  : "border-2 border-purple-200/90 dark:border-purple-500/30 hover:border-cyan-500 hover:shadow-[0_20px_40px_rgba(6,182,212,0.22)] dark:hover:shadow-[0_0_35px_rgba(6,182,212,0.3)] cursor-pointer bg-white/95 dark:bg-[#120826]/95",
               ].join(" ")}
             >
-              <div className="flex items-center justify-between w-full mb-6">
-                <div className="flex items-center gap-3">
-                  <span className="text-4xl group-hover:scale-110 transition-transform">
-                    {icon}
-                  </span>
-                  <span className="w-10 h-10 rounded-2xl bg-cyan-100 dark:bg-cyan-500/10 border border-cyan-300 dark:border-cyan-500/20 flex items-center justify-center text-cyan-950 dark:text-cyan-400 font-black text-lg shrink-0">
-                    L{index + 1}
+              <div>
+                {/* Top Badge Row */}
+                <div className="flex items-center justify-between w-full mb-4">
+                  <div className="flex items-center gap-3">
+                    <span className="text-4xl group-hover:scale-110 transition-transform">
+                      {icon}
+                    </span>
+                    <span className="w-10 h-10 rounded-2xl bg-cyan-100 dark:bg-cyan-500/15 border border-cyan-300 dark:border-cyan-500/30 flex items-center justify-center text-cyan-950 dark:text-cyan-400 font-black text-lg shrink-0">
+                      L{index + 1}
+                    </span>
+                  </div>
+
+                  <span
+                    className={[
+                      "text-xs font-black px-3.5 py-1.5 rounded-full border shadow-sm",
+                      done
+                        ? "bg-slate-400 text-white border-slate-400"
+                        : "bg-cyan-600 text-white border-cyan-500",
+                    ].join(" ")}
+                  >
+                    {done ? "✓ Completed" : "Unlocked"}
                   </span>
                 </div>
 
-                <span
-                  className={[
-                    "text-xs sm:text-sm font-black px-4 py-1.5 rounded-full border shadow-sm",
-                    done
-                      ? "bg-slate-400 text-white border-slate-400"
-                      : "bg-cyan-600 text-white border-cyan-500",
-                  ].join(" ")}
+                {/* Category Title & Description */}
+                <h3
+                  dir="auto"
+                  className="text-2xl font-black text-slate-900 dark:text-white group-hover:text-cyan-700 dark:group-hover:text-cyan-300 transition-colors mb-2 leading-snug"
                 >
-                  {done ? "✓ Completed" : "Unlocked"}
-                </span>
-              </div>
-
-              <div>
-                <h3 dir="auto" className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white group-hover:text-cyan-700 dark:group-hover:text-cyan-300 transition-colors mb-2">
                   {category.title}
                 </h3>
                 {category.description && (
-                  <p dir="auto" className="text-base text-slate-700 dark:text-slate-400 line-clamp-2 font-medium">
+                  <p
+                    dir="auto"
+                    className="text-sm text-slate-700 dark:text-slate-300 line-clamp-2 font-medium mb-3"
+                  >
                     {category.description}
                   </p>
                 )}
+              </div>
+
+              {/* Bottom Meta Tags */}
+              <div className="flex items-center gap-2 pt-3 border-t border-slate-200 dark:border-purple-500/20 text-xs font-black text-slate-700 dark:text-purple-200 flex-wrap">
+                <span className="px-2.5 py-1 rounded-lg bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-500/30">
+                  📝 {qCount} Questions
+                </span>
+                {totalPts > 0 && (
+                  <span className="px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-500/15 border border-amber-200 dark:border-amber-500/30 text-amber-950 dark:text-amber-300">
+                    ⭐ {totalPts} Total Pts
+                  </span>
+                )}
+                <span className="px-2.5 py-1 rounded-lg bg-cyan-50 dark:bg-cyan-500/15 border border-cyan-200 dark:border-cyan-500/30 text-cyan-950 dark:text-cyan-300">
+                  {category.type === "complete" ? "✏️ Fill Blanks" : "🔘 Multiple Choice"}
+                </span>
               </div>
             </motion.button>
           );

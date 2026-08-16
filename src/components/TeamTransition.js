@@ -42,7 +42,10 @@ function TeamTransition({
   numQuestions = 0,
   onContinue,
 }) {
-  const [stage, setStage] = useState("leaderboard"); // "leaderboard" | "turnAnnouncement"
+  const isFirstQuestionOfRound = index === 0 && (!lastScoredTeam || lastPointsEarned === 0);
+  const [stage, setStage] = useState(() =>
+    isFirstQuestionOfRound ? "turnAnnouncement" : "leaderboard"
+  );
   const hasAnimatedScoreRef = useRef(false);
 
   // Compute pre-score and target-score maps

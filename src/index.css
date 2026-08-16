@@ -507,22 +507,124 @@ h4 { font-size: clamp(2.2rem, 3.5vw, 3.2rem); font-weight: 600; }
   transform: translateY(-1px);
 }
 
-/* Keyframes */
+/* Keyframes (Hardware Accelerated with translate3d) */
 @keyframes orb-float-1 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(60px, -80px) scale(1.15); }
-  66% { transform: translate(-40px, 40px) scale(0.9); }
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  33% { transform: translate3d(45px, -55px, 0) scale(1.12); }
+  66% { transform: translate3d(-30px, 30px, 0) scale(0.92); }
 }
 
 @keyframes orb-float-2 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(-70px, 60px) scale(0.85); }
-  66% { transform: translate(50px, -50px) scale(1.2); }
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  33% { transform: translate3d(-50px, 45px, 0) scale(0.9); }
+  66% { transform: translate3d(35px, -35px, 0) scale(1.15); }
 }
 
 @keyframes orb-float-3 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(80px, 70px) scale(1.1); }
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(50px, 45px, 0) scale(1.1); }
+}
+
+@keyframes particle-float-1 {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); opacity: 0.25; }
+  50% { transform: translate3d(25px, -35px, 0) rotate(180deg); opacity: 0.65; }
+}
+
+@keyframes particle-float-2 {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); opacity: 0.3; }
+  50% { transform: translate3d(-30px, 30px, 0) rotate(-180deg); opacity: 0.7; }
+}
+
+@keyframes particle-float-3 {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.2; }
+  50% { transform: translate3d(20px, 25px, 0) scale(1.2); opacity: 0.6; }
+}
+
+.animate-orb-1 { animation: orb-float-1 16s ease-in-out infinite; }
+.animate-orb-2 { animation: orb-float-2 19s ease-in-out infinite; }
+.animate-orb-3 { animation: orb-float-3 22s ease-in-out infinite; }
+
+.animate-float-1 { animation: particle-float-1 12s ease-in-out infinite; }
+.animate-float-2 { animation: particle-float-2 15s ease-in-out infinite; }
+.animate-float-3 { animation: particle-float-3 14s ease-in-out infinite; }
+
+/* Multi-Trajectory Luminescent Meteor Shower (Full-Screen Traverse) */
+@keyframes meteor-trajectory-1 {
+  0% {
+    transform: rotate(212deg) translateX(0);
+    opacity: 0;
+  }
+  5% {
+    opacity: 0.95;
+  }
+  80% {
+    opacity: 0.95;
+  }
+  100% {
+    transform: rotate(212deg) translateX(-2100px);
+    opacity: 0;
+  }
+}
+
+@keyframes meteor-trajectory-2 {
+  0% {
+    transform: rotate(225deg) translateX(0);
+    opacity: 0;
+  }
+  5% {
+    opacity: 0.95;
+  }
+  75% {
+    opacity: 0.95;
+  }
+  100% {
+    transform: rotate(225deg) translateX(-1950px);
+    opacity: 0;
+  }
+}
+
+@keyframes meteor-trajectory-3 {
+  0% {
+    transform: rotate(200deg) translateX(0);
+    opacity: 0;
+  }
+  5% {
+    opacity: 0.95;
+  }
+  85% {
+    opacity: 0.95;
+  }
+  100% {
+    transform: rotate(200deg) translateX(-2300px);
+    opacity: 0;
+  }
+}
+
+.meteor-star-1 {
+  position: absolute;
+  border-radius: 9999px;
+  animation: meteor-trajectory-1 linear infinite;
+  will-change: transform, opacity;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.meteor-star-2 {
+  position: absolute;
+  border-radius: 9999px;
+  animation: meteor-trajectory-2 linear infinite;
+  will-change: transform, opacity;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.meteor-star-3 {
+  position: absolute;
+  border-radius: 9999px;
+  animation: meteor-trajectory-3 linear infinite;
+  will-change: transform, opacity;
+  pointer-events: none;
+  opacity: 0;
 }
 
 @keyframes pulse-glow {
@@ -538,4 +640,107 @@ h4 { font-size: clamp(2.2rem, 3.5vw, 3.2rem); font-weight: 600; }
 
 .animate-pulse-glow {
   animation: pulse-glow 1.5s ease-in-out infinite;
+}
+
+/* Random Drifting Glistering & Twinkling Sparkles (GPU Composited) */
+@keyframes glister-drift-1 {
+  0% {
+    transform: translate3d(0, 0, 0) scale(0) rotate(0deg);
+    opacity: 0;
+  }
+  25% {
+    opacity: 0.95;
+    transform: translate3d(20px, -25px, 0) scale(1.2) rotate(45deg);
+  }
+  50% {
+    opacity: 0.35;
+    transform: translate3d(40px, -50px, 0) scale(0.65) rotate(90deg);
+  }
+  75% {
+    opacity: 0.95;
+    transform: translate3d(65px, -75px, 0) scale(1.15) rotate(135deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(90px, -100px, 0) scale(0) rotate(180deg);
+  }
+}
+
+@keyframes glister-drift-2 {
+  0% {
+    transform: translate3d(0, 0, 0) scale(0) rotate(0deg);
+    opacity: 0;
+  }
+  25% {
+    opacity: 0.95;
+    transform: translate3d(-25px, 20px, 0) scale(1.25) rotate(-60deg);
+  }
+  50% {
+    opacity: 0.4;
+    transform: translate3d(-50px, 40px, 0) scale(0.6) rotate(-120deg);
+  }
+  75% {
+    opacity: 0.9;
+    transform: translate3d(-75px, 60px, 0) scale(1.1) rotate(-180deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(-100px, 80px, 0) scale(0) rotate(-240deg);
+  }
+}
+
+@keyframes glister-drift-3 {
+  0% {
+    transform: translate3d(0, 0, 0) scale(0);
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.95;
+    transform: translate3d(15px, -35px, 0) scale(1.3);
+  }
+  60% {
+    opacity: 0.5;
+    transform: translate3d(30px, -70px, 0) scale(0.7);
+  }
+  85% {
+    opacity: 0.95;
+    transform: translate3d(45px, -105px, 0) scale(1.15);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(60px, -140px, 0) scale(0);
+  }
+}
+
+.animate-glister-drift-1 {
+  animation: glister-drift-1 ease-in-out infinite;
+  will-change: transform, opacity;
+  transform-origin: center;
+  opacity: 0;
+  transform: scale(0);
+}
+
+.animate-glister-drift-2 {
+  animation: glister-drift-2 ease-in-out infinite;
+  will-change: transform, opacity;
+  transform-origin: center;
+  opacity: 0;
+  transform: scale(0);
+}
+
+.animate-glister-drift-3 {
+  animation: glister-drift-3 ease-in-out infinite;
+  will-change: transform, opacity;
+  transform-origin: center;
+  opacity: 0;
+  transform: scale(0);
+}
+
+@keyframes canvas-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-canvas-fade {
+  animation: canvas-fade-in 0.8s ease-out forwards;
 }
