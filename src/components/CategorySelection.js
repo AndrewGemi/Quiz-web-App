@@ -41,7 +41,7 @@ function CategorySelection({
             className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-purple-950/60 border border-slate-300 dark:border-purple-500/30 text-slate-800 dark:text-purple-200 font-black text-sm hover:bg-slate-200 dark:hover:bg-purple-900/60 transition-all flex items-center gap-2 cursor-pointer shadow-sm"
           >
             <span>⬅</span>
-            <span>Back to Team Setup</span>
+            <span className="text-white">Back to Team Setup</span>
           </motion.button>
         )}
 

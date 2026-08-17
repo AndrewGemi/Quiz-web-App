@@ -44,7 +44,7 @@ function TeamSetup({
     const name = teamInput.trim();
     if (!name) return;
     if (teams.some((t) => (typeof t === "string" ? t : t.name) === name)) return;
-    
+
     // Automatically assign avatar based on team count
     const autoAvatar = AVAILABLE_AVATARS[teams.length % AVAILABLE_AVATARS.length];
     setTeams((prev) => [...prev, { name, avatar: autoAvatar }]);
@@ -102,8 +102,8 @@ function TeamSetup({
     examMode === "real"
       ? "🏆 Official Exam"
       : examMode === "shootout"
-      ? "🔥 Penalty Shootout"
-      : "⚡ Trial Exam";
+        ? "🔥 Penalty Shootout"
+        : "⚡ Trial Exam";
 
   return (
     <motion.div
@@ -124,7 +124,7 @@ function TeamSetup({
             className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-purple-950/60 border border-slate-300 dark:border-purple-500/30 text-slate-800 dark:text-purple-200 font-black text-sm hover:bg-slate-200 dark:hover:bg-purple-900/60 transition-all flex items-center gap-2 cursor-pointer shadow-sm"
           >
             <span>⬅</span>
-            <span>Back to Mode Selection</span>
+            <span className="text-white">Back to Mode Selection</span>
           </motion.button>
 
           {/* Active Mode Summary Tag */}
@@ -291,8 +291,8 @@ function TeamSetup({
               onClick={() => onSetSecsPerQuestion && onSetSecsPerQuestion(s)}
               className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
                 secsPerQuestion === s
-                  ? "bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md scale-105 border border-violet-500"
-                  : "bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-slate-200 border border-slate-300 dark:border-white/15 hover:bg-slate-200 dark:hover:bg-white/20"
+                  ? "bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md scale-105 border-2 border-violet-500"
+                  : "bg-white dark:bg-white/10 text-slate-800 dark:text-slate-200 border-2 border-purple-200 hover:border-purple-400 dark:border-white/15 hover:bg-purple-50 dark:hover:bg-white/20 shadow-sm"
               }`}
             >
               {s}s

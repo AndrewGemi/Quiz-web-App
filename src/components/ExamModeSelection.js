@@ -87,7 +87,7 @@ export default function ExamModeSelection({
             className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-purple-950/60 border border-slate-300 dark:border-purple-500/30 text-slate-800 dark:text-purple-200 font-black text-sm hover:bg-slate-200 dark:hover:bg-purple-900/60 transition-all flex items-center gap-2 cursor-pointer shadow-sm"
           >
             <span>🏠</span>
-            <span>Back to Welcome</span>
+            <span className="text-white">Back to Welcome</span>
           </motion.button>
         </div>
       )}
@@ -193,7 +193,7 @@ export default function ExamModeSelection({
               </span>
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-violet-600 dark:bg-violet-500/30 text-white dark:text-violet-200 border border-violet-500 dark:border-violet-400/40 font-black text-xs shadow-md shadow-violet-500/20">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span>{secsPerQuestion}s Active</span>
+                <span className="text-[--color-light]">{secsPerQuestion}s Active</span>
               </span>
             </div>
             <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white">
@@ -214,10 +214,10 @@ export default function ExamModeSelection({
                   setShowCustomInput(false);
                   handleSelectTimer(seconds);
                 }}
-                className={`px-3.5 sm:px-4 py-2 rounded-xl text-sm font-black transition-all ${
+                className={`px-3.5 sm:px-4 py-2 rounded-xl text-sm font-black transition-all cursor-pointer ${
                   isSelected
-                    ? "bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md shadow-violet-500/30 scale-105 border border-violet-500"
-                    : "bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-slate-200 border border-slate-300 dark:border-white/15 hover:bg-slate-200 dark:hover:bg-white/20"
+                    ? "bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md shadow-violet-500/30 scale-105 border-2 border-violet-500"
+                    : "bg-white dark:bg-white/10 text-slate-800 dark:text-slate-200 border-2 border-purple-200 hover:border-purple-400 dark:border-white/15 hover:bg-purple-50 dark:hover:bg-white/20 shadow-sm"
                 }`}
               >
                 {seconds}s
@@ -235,12 +235,12 @@ export default function ExamModeSelection({
                 value={customTimer}
                 onChange={(e) => setCustomTimer(e.target.value)}
                 placeholder="Secs (5-300)"
-                className="w-24 px-3 py-1.5 rounded-xl border border-violet-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-extrabold text-sm focus:outline-none"
+                className="w-24 px-3 py-1.5 rounded-xl border-2 border-violet-500 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-extrabold text-sm focus:outline-none"
                 autoFocus
               />
               <button
                 type="submit"
-                className="px-3.5 py-1.5 rounded-xl bg-violet-600 text-white text-xs font-black shadow-sm"
+                className="px-3.5 py-1.5 rounded-xl bg-violet-600 text-white text-xs font-black shadow-sm cursor-pointer"
               >
                 Set
               </button>
@@ -249,10 +249,10 @@ export default function ExamModeSelection({
             <button
               type="button"
               onClick={() => setShowCustomInput(true)}
-              className={`px-3.5 py-2 rounded-xl text-sm font-black transition-all ${
+              className={`px-3.5 py-2 rounded-xl text-sm font-black transition-all cursor-pointer ${
                 !TIMER_PRESETS.includes(secsPerQuestion)
-                  ? "bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md border border-violet-500"
-                  : "bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-slate-200 border border-slate-300 dark:border-white/15 hover:bg-slate-200 dark:hover:bg-white/20"
+                  ? "bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md border-2 border-violet-500"
+                  : "bg-white dark:bg-white/10 text-slate-800 dark:text-slate-200 border-2 border-purple-200 hover:border-purple-400 dark:border-white/15 hover:bg-purple-50 dark:hover:bg-white/20 shadow-sm"
               }`}
             >
               Custom ✏️
