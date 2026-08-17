@@ -38,7 +38,7 @@ function CategorySelection({
             whileTap={{ scale: 0.97 }}
             type="button"
             onClick={onBack}
-            className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-purple-950/60 border border-slate-300 dark:border-purple-500/30 text-slate-800 dark:text-purple-200 font-black text-sm hover:bg-slate-200 dark:hover:bg-purple-900/60 transition-all flex items-center gap-2 cursor-pointer shadow-sm"
+            className="px-4 py-2 rounded-xl bg-purple-900 hover:bg-purple-800 dark:bg-purple-950/60 dark:hover:bg-purple-900/60 border border-purple-700 dark:border-purple-500/30 text-white dark:text-purple-200 font-black text-sm transition-all flex items-center gap-2 cursor-pointer shadow-sm"
           >
             <span>⬅</span>
             <span className="text-white">Back to Team Setup</span>
@@ -47,13 +47,15 @@ function CategorySelection({
 
         {/* Registered Teams Quick Summary */}
         {teams && teams.length > 0 && (
-          <div className="flex items-center gap-2 px-4 py-1.5 rounded-xl bg-purple-100 dark:bg-purple-950/50 border border-purple-300 dark:border-purple-500/30 text-xs font-black text-purple-950 dark:text-purple-200">
-            <span>👥 {teams.length} Competing Teams:</span>
+          <div className="flex items-center gap-2 px-4 py-1.5 rounded-xl bg-purple-900 dark:bg-purple-950/70 border border-purple-700 dark:border-purple-500/30 text-xs font-black text-white dark:text-purple-200 shadow-sm">
+            <span className="text-white dark:text-purple-200 font-black">
+              👥 {teams.length} Competing Teams:
+            </span>
             <div className="flex items-center gap-1.5 truncate max-w-xs sm:max-w-md">
               {teams.map((t, idx) => (
                 <span
                   key={idx}
-                  className="px-2 py-0.5 rounded-md bg-white dark:bg-purple-900/60 border border-purple-200 dark:border-purple-500/30 truncate"
+                  className="px-2 py-0.5 rounded-md bg-purple-950 dark:bg-purple-900/80 border border-purple-700/60 dark:border-purple-500/40 text-white font-black truncate"
                 >
                   {typeof t === "string" ? t : t.name}
                 </span>
@@ -157,16 +159,21 @@ function CategorySelection({
               </div>
 
               {/* Bottom Meta Tags */}
-              <div className="flex items-center gap-2 pt-3 border-t border-slate-200 dark:border-purple-500/20 text-xs font-black text-slate-700 dark:text-purple-200 flex-wrap">
-                <span className="px-2.5 py-1 rounded-lg bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-500/30">
+              <div className="flex items-center gap-2 pt-3 border-t border-slate-200 dark:border-purple-500/20 text-xs font-black flex-wrap">
+                {/* Questions Tag: Pure white text */}
+                <span className="px-2.5 py-1 rounded-lg bg-purple-900 dark:bg-purple-950/60 border border-purple-700 dark:border-purple-500/30 text-white dark:text-purple-200 font-black shadow-xs">
                   📝 {qCount} Questions
                 </span>
+
+                {/* Points Tag: High-contrast dark amber text */}
                 {totalPts > 0 && (
-                  <span className="px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-500/15 border border-amber-200 dark:border-amber-500/30 text-amber-950 dark:text-amber-300">
+                  <span className="px-2.5 py-1 rounded-lg bg-amber-100 dark:bg-amber-500/15 border border-amber-300 dark:border-amber-500/30 text-amber-950 dark:text-amber-600 font-black shadow-xs">
                     ⭐ {totalPts} Total Pts
                   </span>
                 )}
-                <span className="px-2.5 py-1 rounded-lg bg-cyan-50 dark:bg-cyan-500/15 border border-cyan-200 dark:border-cyan-500/30 text-cyan-950 dark:text-cyan-300">
+
+                {/* Format Tag: Deep Dark Cyan/Teal with Pure White Text */}
+                <span className="px-2.5 py-1 rounded-lg bg-cyan-900 dark:bg-cyan-950/70 border border-cyan-700 dark:border-cyan-500/30 text-white dark:text-cyan-200 font-black shadow-xs">
                   {category.type === "complete" ? "✏️ Fill Blanks" : "🔘 Multiple Choice"}
                 </span>
               </div>

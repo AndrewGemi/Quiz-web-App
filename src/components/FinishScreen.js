@@ -76,7 +76,7 @@ function FinishScreen({
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="inline-block px-5 py-2 rounded-full text-xs sm:text-sm font-extrabold uppercase tracking-wider text-amber-950 dark:text-amber-300 bg-gradient-to-r from-amber-100 via-yellow-50 to-amber-100 dark:bg-amber-500/15 border border-amber-300 dark:border-amber-500/30 mb-3 shadow-lg animate-pulse"
+            className="inline-block px-5 py-2 rounded-full text-xs sm:text-sm font-extrabold uppercase tracking-wider text-amber-950 dark:text-amber-600 bg-gradient-to-r from-amber-100 via-yellow-50 to-amber-100 dark:bg-amber-500/15 border border-amber-300 dark:border-amber-500/30 mb-3 shadow-lg animate-pulse"
           >
             🏆 Grand Championship Ceremony
           </motion.span>
@@ -100,7 +100,7 @@ function FinishScreen({
 
         {/* 3D Victory Podium Grid (Revealing 3rd -> 2nd -> 1st) */}
         <div className="w-full max-w-4xl grid grid-cols-3 gap-3 sm:gap-6 items-end mb-16 min-h-[340px] px-2 relative">
-          
+
           {/* ================= POSITION 2: 2nd Place (Silver) - Reveals at 2.4s ================= */}
           <div className="flex flex-col items-center">
             {runnerUpGroup ? (
@@ -218,7 +218,7 @@ function FinishScreen({
                       </span>
                       <div
                         dir="auto"
-                        className="font-black text-slate-950 dark:text-amber-300 text-sm sm:text-lg text-center truncate w-full drop-shadow-sm dark:drop-shadow-md"
+                        className="font-black text-slate-950 dark:text-amber-600 text-sm sm:text-lg text-center truncate w-full drop-shadow-sm dark:drop-shadow-md"
                       >
                         {t.team}
                       </div>
@@ -330,10 +330,10 @@ function FinishScreen({
                     isWinner
                       ? "bg-gradient-to-r from-amber-200/90 via-yellow-100/90 to-amber-200/90 dark:from-amber-500/25 dark:via-yellow-500/15 dark:to-amber-500/25 border-amber-400 text-amber-950 dark:text-white shadow-[0_6px_25px_rgba(245,158,11,0.25)] ring-2 ring-amber-400/50"
                       : isSecond
-                      ? "bg-gradient-to-r from-slate-100 to-slate-200/70 dark:from-slate-500/20 dark:to-slate-600/10 border-slate-300 dark:border-slate-300/60 text-slate-900 dark:text-slate-100"
-                      : isThird
-                      ? "bg-gradient-to-r from-amber-100/70 to-orange-100/60 dark:from-amber-800/20 dark:to-amber-900/10 border-amber-300 dark:border-amber-600/60 text-amber-950 dark:text-amber-200"
-                      : "bg-slate-50/90 dark:bg-[#160c33]/80 border-slate-200 dark:border-purple-500/25 hover:border-purple-400/40 text-slate-800 dark:text-slate-200",
+                        ? "bg-gradient-to-r from-slate-100 to-slate-200/70 dark:from-slate-500/20 dark:to-slate-600/10 border-slate-300 dark:border-slate-300/60 text-slate-900 dark:text-slate-100"
+                        : isThird
+                          ? "bg-gradient-to-r from-amber-100/70 to-orange-100/60 dark:from-amber-800/20 dark:to-amber-900/10 border-amber-300 dark:border-amber-600/60 text-amber-950 dark:text-amber-200"
+                          : "bg-slate-50/90 dark:bg-[#160c33]/80 border-slate-200 dark:border-purple-500/25 hover:border-purple-400/40 text-slate-800 dark:text-slate-200",
                   ].join(" ")}
                 >
                   <div className="flex items-center gap-3 sm:gap-4 min-w-0">
@@ -344,10 +344,10 @@ function FinishScreen({
                         isWinner
                           ? "bg-gradient-to-tr from-amber-400 via-yellow-300 to-amber-400 text-slate-950 border-amber-500"
                           : isSecond
-                          ? "bg-slate-300 text-slate-950 border-slate-200"
-                          : isThird
-                          ? "bg-amber-600 text-white border-amber-500"
-                          : "bg-purple-100 dark:bg-purple-950/60 text-purple-950 dark:text-purple-200 border-purple-300 dark:border-purple-500/30",
+                            ? "bg-slate-300 text-slate-950 border-slate-200"
+                            : isThird
+                              ? "bg-amber-600 text-white border-amber-500"
+                              : "bg-purple-100 dark:bg-purple-950/60 text-purple-950 dark:text-purple-200 border-purple-300 dark:border-purple-500/30",
                       ].join(" ")}
                     >
                       {rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : `#${rank}`}
@@ -375,15 +375,14 @@ function FinishScreen({
                             width: `${Math.min(100, Math.max(10, (total / maxTotalScore) * 100))}%`,
                           }}
                           transition={{ delay: 6.0 + index * 0.1, duration: 0.6, ease: "easeOut" }}
-                          className={`h-full rounded-full ${
-                            isWinner
-                              ? "bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-300 shadow-[0_0_10px_rgba(245,158,11,0.6)]"
-                              : isSecond
+                          className={`h-full rounded-full ${isWinner
+                            ? "bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-300 shadow-[0_0_10px_rgba(245,158,11,0.6)]"
+                            : isSecond
                               ? "bg-gradient-to-r from-slate-300 to-cyan-300"
                               : isThird
-                              ? "bg-gradient-to-r from-amber-600 to-amber-400"
-                              : "bg-gradient-to-r from-purple-500 to-indigo-400"
-                          }`}
+                                ? "bg-gradient-to-r from-amber-600 to-amber-400"
+                                : "bg-gradient-to-r from-purple-500 to-indigo-400"
+                            }`}
                         />
                       </div>
                     </div>
@@ -392,7 +391,7 @@ function FinishScreen({
                   {/* Total Score */}
                   <div className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-100 via-yellow-50 to-amber-100 dark:bg-purple-500/20 border border-amber-300 dark:border-purple-400/30 shrink-0 shadow-sm">
                     <span className="text-base sm:text-xl">⭐</span>
-                    <span className="text-2xl sm:text-3xl font-black text-amber-950 dark:text-amber-300">
+                    <span className="text-2xl sm:text-3xl font-black text-amber-950 dark:text-amber-600">
                       {total}
                     </span>
                     <span className="text-xs text-amber-950 dark:text-purple-300 font-extrabold uppercase hidden sm:inline">

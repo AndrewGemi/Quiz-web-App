@@ -10,7 +10,7 @@ function Header({
   index,
   numQuestions,
   currentCategoryTitle,
-  dispatch = () => {},
+  dispatch = () => { },
   secondsRemaining = 0,
   isTimerPaused = false,
   secPerQuestion = 20,
@@ -43,7 +43,7 @@ function Header({
                       {currentTeam.name}
                     </span>
                   </div>
-                  <span className="px-2.5 py-0.5 rounded-lg bg-gradient-to-r from-amber-100 via-yellow-50 to-amber-100 dark:bg-amber-500/20 text-amber-950 dark:text-amber-300 font-extrabold text-xs border border-amber-300 dark:border-amber-400/30 ml-1 shadow-sm">
+                  <span className="px-2.5 py-0.5 rounded-lg bg-gradient-to-r from-amber-100 via-yellow-50 to-amber-100 dark:bg-amber-500/20 text-amber-950 dark:text-amber-600 font-extrabold text-xs border border-amber-300 dark:border-amber-400/30 ml-1 shadow-sm">
                     ⭐ {currentTeam.score} pts
                   </span>
                 </div>

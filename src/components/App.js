@@ -520,8 +520,8 @@ export default function App() {
       state.examMode === "trial"
         ? "questions_trial.json"
         : state.examMode === "shootout"
-        ? "questions_shootout.json"
-        : "questions_real.json";
+          ? "questions_shootout.json"
+          : "questions_real.json";
 
     const primaryUrl = `${process.env.PUBLIC_URL || ""}/data/${fileName}`;
     let cancelled = false;
@@ -581,7 +581,7 @@ export default function App() {
   return (
     <div className="app-shell min-h-screen text-slate-900 dark:text-slate-100 relative">
       <BackgroundCanvas theme={theme} />
-      
+
       {/* Excel Upload Modal */}
       <ExcelUploadModal
         isOpen={isExcelModalOpen}
@@ -619,7 +619,7 @@ export default function App() {
         status === "selectingTeams") && <ResetButton dispatch={dispatch} />}
 
       <Main>
-        <div className="w-full relative z-10 overflow-hidden min-h-[60vh] flex flex-col justify-center">
+        <div className="w-full relative z-10 min-h-[60vh] flex flex-col justify-center">
           <AnimatePresence mode="wait">
             {status === "loading" && (
               <motion.div
@@ -780,7 +780,7 @@ export default function App() {
                             </span>
                           </div>
                           <div className="relative ml-2">
-                            <span className="px-3.5 py-1 rounded-xl bg-gradient-to-r from-amber-100 via-yellow-50 to-amber-100 dark:bg-amber-500/20 text-amber-950 dark:text-amber-300 font-black text-xs sm:text-sm border border-amber-300 dark:border-amber-400/30 shadow-sm flex items-center gap-1">
+                            <span className="px-3.5 py-1 rounded-xl bg-gradient-to-r from-amber-100 via-yellow-50 to-amber-100 dark:bg-amber-500/20 text-amber-950 dark:text-amber-600 font-black text-xs sm:text-sm border border-amber-300 dark:border-amber-400/30 shadow-sm flex items-center gap-1">
                               ⭐ {points && currentTeam ? points[currentTeam] || 0 : 0} pts
                             </span>
                             <AnimatePresence>

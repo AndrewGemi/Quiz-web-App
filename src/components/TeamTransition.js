@@ -6,7 +6,7 @@ const BADGES = [
     rank: 1,
     icon: "🥇",
     label: "1st Place",
-    bg: "from-amber-200/90 via-yellow-100/90 to-amber-200/90 dark:from-amber-500/30 dark:to-yellow-500/10 border-amber-400 text-amber-950 dark:text-amber-300",
+    bg: "from-amber-200/90 via-yellow-100/90 to-amber-200/90 dark:from-amber-500/30 dark:to-yellow-500/10 border-amber-400 text-amber-950 dark:text-amber-600",
     shadow: "shadow-[0_4px_20px_rgba(245,158,11,0.25)] dark:shadow-[0_0_25px_rgba(245,158,11,0.35)] ring-2 ring-amber-400/60",
     badgeBg: "bg-amber-400 text-amber-950 border-amber-500",
   },
@@ -22,7 +22,7 @@ const BADGES = [
     rank: 3,
     icon: "🥉",
     label: "3rd Place",
-    bg: "from-amber-100/70 to-orange-100/60 dark:from-amber-700/30 dark:to-amber-800/10 border-amber-300 text-amber-950 dark:text-amber-300",
+    bg: "from-amber-100/70 to-orange-100/60 dark:from-amber-700/30 dark:to-amber-800/10 border-amber-300 text-amber-950 dark:text-amber-600",
     shadow: "shadow-[0_4px_15px_rgba(217,119,6,0.2)] dark:shadow-[0_0_15px_rgba(217,119,6,0.25)]",
     badgeBg: "bg-amber-600 text-white border-amber-500",
   },
@@ -83,6 +83,7 @@ function TeamTransition({
   const [displayedScores, setDisplayedScores] = useState(() =>
     hasScoreChange ? initialScores : targetScores
   );
+  const [showFloatingPoints, setShowFloatingPoints] = useState(false);
 
   // Animated slow motion score counting and slow reordering transition
   useEffect(() => {
@@ -96,13 +97,14 @@ function TeamTransition({
     setDisplayedScores(initialScores);
     setAnimationPhase("initial");
 
-    // Phase 2: Start slow score addition at 900ms
+    // Phase 2: Start score addition at 600ms
     const timer1 = setTimeout(() => {
       setAnimationPhase("scoring");
+      setShowFloatingPoints(true);
 
       const startScore = initialScores[lastScoredTeam] || 0;
       const endScore = targetScores[lastScoredTeam] || 0;
-      const duration = 2400; // 2.4 seconds slow, cinematic count-up
+      const duration = 2000; // 2.0 seconds cinematic count-up
       const startTime = performance.now();
 
       function step(now) {
@@ -128,15 +130,21 @@ function TeamTransition({
       }
 
       requestAnimationFrame(step);
-    }, 900);
+    }, 600);
 
-    // Phase 3: Trigger smooth, slow reordering at 3600ms (after score finishes)
+    // Auto-hide floating points after 2.6s so it animates then disappears
+    const timerFloat = setTimeout(() => {
+      setShowFloatingPoints(false);
+    }, 2800);
+
+    // Phase 3: Trigger smooth reordering at 3200ms
     const timer2 = setTimeout(() => {
       setAnimationPhase("reordered");
-    }, 3600);
+    }, 3200);
 
     return () => {
       clearTimeout(timer1);
+      clearTimeout(timerFloat);
       clearTimeout(timer2);
     };
   }, [hasScoreChange, initialScores, targetScores, lastScoredTeam]);
@@ -225,7 +233,7 @@ function TeamTransition({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.92, y: -20 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
-            className="w-full max-w-2xl glass-card p-6 sm:p-8 border-2 border-purple-300/80 dark:border-purple-500/40 shadow-[0_20px_60px_rgba(124,58,237,0.25)] dark:shadow-[0_0_60px_rgba(139,92,246,0.35)] rounded-3xl flex flex-col items-center gap-6 my-auto bg-white/95 dark:bg-[#140a2b]/95"
+            className="w-full max-w-2xl glass-card p-6 sm:p-8 border-2 border-purple-300/80 dark:border-purple-500/40 shadow-[0_20px_60px_rgba(124,58,237,0.25)] dark:shadow-[0_0_60px_rgba(139,92,246,0.35)] rounded-3xl flex flex-col items-center gap-6 my-auto bg-white/95 dark:bg-[#140a2b]/95 overflow-visible relative"
           >
             {/* Header Title Badge */}
             <div className="flex flex-col items-center text-center gap-2">
@@ -243,7 +251,7 @@ function TeamTransition({
             </div>
 
             {/* Live Reordering Animated Leaderboard List */}
-            <div className="w-full flex flex-col gap-3 my-2">
+            <div className="w-full flex flex-col gap-3 my-2 overflow-visible">
               <AnimatePresence>
                 {activeLeaderboard.map((item, rankIdx) => {
                   const rank = rankIdx + 1;
@@ -278,39 +286,16 @@ function TeamTransition({
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: 20 }}
-                      className={`relative p-3.5 sm:p-4 rounded-2xl border-2 flex items-center justify-between gap-4 transition-all duration-500 ${
-                        isScoreJustAdded
-                          ? "ring-2 ring-emerald-400/80 shadow-[0_0_30px_rgba(16,185,129,0.35)] dark:shadow-[0_0_35px_rgba(16,185,129,0.45)]"
-                          : ""
-                      } ${
-                        item.isCurrentUpNext
+                      className={`relative p-3.5 sm:p-4 rounded-2xl border-2 flex items-center justify-between gap-4 transition-all duration-500 overflow-visible ${isScoreJustAdded
+                        ? "ring-2 ring-emerald-400/80 shadow-[0_0_30px_rgba(16,185,129,0.35)] dark:shadow-[0_0_35px_rgba(16,185,129,0.45)]"
+                        : ""
+                        } ${item.isCurrentUpNext
                           ? "bg-gradient-to-r from-purple-100 via-indigo-50 to-purple-100 dark:from-purple-900/80 dark:via-indigo-900/80 dark:to-purple-900/80 border-purple-400 shadow-[0_4px_25px_rgba(168,85,247,0.25)] dark:shadow-[0_0_30px_rgba(168,85,247,0.4)]"
                           : rank <= 3
-                          ? `bg-gradient-to-r ${badgeStyle.bg} ${badgeStyle.shadow}`
-                          : "bg-slate-50/95 dark:bg-[#140a2b]/95 border-slate-200 dark:border-purple-500/25 hover:border-purple-400/40"
-                      }`}
+                            ? `bg-gradient-to-r ${badgeStyle.bg} ${badgeStyle.shadow}`
+                            : "bg-slate-50/95 dark:bg-[#140a2b]/95 border-slate-200 dark:border-purple-500/25 hover:border-purple-400/40"
+                        }`}
                     >
-                      {/* Floating Animated Score Badge When Team Answers Right */}
-                      <AnimatePresence>
-                        {item.isScoringTeam && animationPhase === "scoring" && (
-                          <motion.div
-                            key="floating-pts"
-                            initial={{ opacity: 0, y: 15, scale: 0.5 }}
-                            animate={{ opacity: 1, y: -28, scale: 1.15 }}
-                            exit={{ opacity: 0, y: -45, scale: 0.8 }}
-                            transition={{
-                              duration: 0.8,
-                              ease: "easeOut",
-                            }}
-                            className="absolute -top-3 right-4 px-3.5 py-1 rounded-full bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-500 text-white font-black text-xs sm:text-sm shadow-[0_0_25px_rgba(16,185,129,0.9)] border border-emerald-300 flex items-center gap-1.5 z-30 pointer-events-none"
-                          >
-                            <span>✨</span>
-                            <span>+{lastPointsEarned} pts!</span>
-                            <span>🎉</span>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-
                       {/* Rank Badge & Team Avatar */}
                       <div className="flex items-center gap-3 min-w-0">
                         {/* Position Icon / Number */}
@@ -373,46 +358,71 @@ function TeamTransition({
                                     8,
                                     ((displayedScores[item.name] ?? item.totalScore) /
                                       maxScore) *
-                                      100
+                                    100
                                   )
                                 )}%`,
                               }}
                               transition={{ duration: 1.8, ease: "easeOut" }}
-                              className={`h-full rounded-full ${
-                                rank === 1
-                                  ? "bg-gradient-to-r from-amber-500 to-yellow-400 shadow-[0_0_10px_rgba(245,158,11,0.8)]"
-                                  : rank === 2
+                              className={`h-full rounded-full ${rank === 1
+                                ? "bg-gradient-to-r from-amber-500 to-yellow-400 shadow-[0_0_10px_rgba(245,158,11,0.8)]"
+                                : rank === 2
                                   ? "bg-gradient-to-r from-slate-400 to-cyan-400"
                                   : "bg-gradient-to-r from-purple-500 to-indigo-400"
-                              }`}
+                                }`}
                             />
                           </div>
                         </div>
                       </div>
 
-                      {/* Score Pill with High-Contrast Text */}
-                      <div className="flex items-center gap-2 shrink-0">
+                      {/* Score Pill with High-Contrast Text & Floating Points Pop */}
+                      <div className="flex items-center gap-2 shrink-0 relative overflow-visible">
+                        {/* Floating Animated Score Badge When Team Answers Right */}
+                        <AnimatePresence>
+                          {item.isScoringTeam && showFloatingPoints && lastPointsEarned > 0 && (
+                            <motion.div
+                              key="floating-pts"
+                              initial={{ opacity: 0, scale: 0.3, y: 0 }}
+                              animate={{
+                                opacity: [0, 1, 1, 0.95],
+                                scale: [0.3, 1.25, 1.1],
+                                y: [0, -38, -46],
+                              }}
+                              exit={{ opacity: 0, y: -65, scale: 0.8, filter: "blur(4px)" }}
+                              transition={{
+                                duration: 1.8,
+                                times: [0, 0.25, 1],
+                                ease: "easeOut",
+                              }}
+                              className="absolute -top-3 right-0 sm:right-1 px-4 py-1.5 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 text-white font-black text-xs sm:text-sm shadow-[0_0_30px_rgba(16,185,129,0.95)] border-2 border-white flex items-center gap-1.5 z-50 pointer-events-none drop-shadow-2xl whitespace-nowrap"
+                            >
+                              <span className="animate-bounce">✨</span>
+                              <span className="tracking-wide">+{lastPointsEarned} PTS!</span>
+                              <span>🎉</span>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+
                         <motion.div
                           animate={
                             item.isScoringTeam && animationPhase === "scoring"
                               ? {
-                                  scale: [1, 1.2, 1.05],
-                                  boxShadow: [
-                                    "0 0 0px rgba(245,158,11,0)",
-                                    "0 0 25px rgba(245,158,11,0.8)",
-                                    "0 0 15px rgba(245,158,11,0.4)",
-                                  ],
-                                }
+                                scale: [1, 1.2, 1.05],
+                                boxShadow: [
+                                  "0 0 0px rgba(245,158,11,0)",
+                                  "0 0 25px rgba(245,158,11,0.8)",
+                                  "0 0 15px rgba(245,158,11,0.4)",
+                                ],
+                              }
                               : { scale: 1 }
                           }
                           transition={{ duration: 1.0, ease: "easeInOut" }}
                           className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-100 via-yellow-50 to-amber-100 dark:bg-amber-500/20 border-2 border-amber-300 dark:border-amber-400/40 shadow-sm flex items-center gap-1.5 shrink-0"
                         >
                           <span className="text-base sm:text-lg">⭐</span>
-                          <span className="text-base sm:text-xl font-black text-black dark:text-amber-300">
+                          <span className="text-base sm:text-xl font-black text-black dark:text-amber-600">
                             {displayedScores[item.name] ?? item.totalScore}
                           </span>
-                          <span className="text-[11px] text-amber-900 dark:text-amber-300 font-extrabold uppercase">
+                          <span className="text-[11px] text-amber-900 dark:text-amber-600 font-extrabold uppercase">
                             pts
                           </span>
                         </motion.div>
@@ -477,7 +487,7 @@ function TeamTransition({
               >
                 {nextTeamData.name}
               </div>
-              <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-xl bg-gradient-to-r from-amber-100 via-yellow-50 to-amber-100 dark:bg-amber-500/20 text-black dark:text-amber-300 font-extrabold text-sm border border-amber-300 dark:border-amber-400/35 mt-2 shadow-sm">
+              <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-xl bg-gradient-to-r from-amber-100 via-yellow-50 to-amber-100 dark:bg-amber-500/20 text-black dark:text-amber-600 font-extrabold text-sm border border-amber-300 dark:border-amber-400/35 mt-2 shadow-sm">
                 ⭐ {displayedScores[nextTeamData.name] ?? nextTeamData.totalScore} Total Points
               </span>
             </div>
@@ -493,7 +503,7 @@ function TeamTransition({
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={() => setStage("leaderboard")}
-                className="px-5 py-3.5 rounded-2xl bg-slate-100 dark:bg-purple-950/60 border border-slate-300 dark:border-purple-500/30 text-slate-900 dark:text-purple-300 font-extrabold text-sm hover:bg-slate-200 dark:hover:bg-purple-900/60 hover:text-slate-950 dark:hover:text-white transition-all shadow-md w-full sm:w-auto shrink-0 cursor-pointer"
+                className="px-5 py-3.5 rounded-2xl bg-slate-100 dark:bg-purple-950/60 border border-slate-300 dark:border-purple-500/30 text-white dark:text-purple-300 font-extrabold text-sm hover:bg-slate-200 dark:hover:bg-purple-900/60 hover:text-slate-950 dark:hover:text-white transition-all shadow-md w-full sm:w-auto shrink-0 cursor-pointer"
               >
                 ⬅ View Leaderboard
               </motion.button>
@@ -502,10 +512,10 @@ function TeamTransition({
                 whileHover={{ scale: 1.05, boxShadow: "0 0 40px rgba(168, 85, 247, 0.6)" }}
                 whileTap={{ scale: 0.95 }}
                 onClick={onContinue}
-                className="btn-primary text-xl font-black px-8 py-4 rounded-2xl shadow-2xl w-full flex items-center justify-center gap-3 cursor-pointer"
+                className="btn-primary px-8 py-4 rounded-2xl shadow-2xl w-full flex items-center justify-center gap-2 cursor-pointer"
               >
                 <span>🎮</span>
-                <span>Ready to Play!</span>
+                <span className="text-2xl font-extrabold">Ready to Play!</span>
               </motion.button>
             </div>
           </motion.div>

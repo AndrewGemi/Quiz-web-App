@@ -35,11 +35,11 @@ function Progress({ index, numQuestions, points, totalPoints, answer }) {
         </div>
 
         <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-          <span className="px-2.5 py-1 rounded-xl bg-gradient-to-r from-amber-100 via-yellow-50 to-amber-100 dark:bg-amber-500/15 border border-amber-300 dark:border-amber-500/30 text-amber-950 dark:text-amber-300 text-xs uppercase tracking-wider font-black shadow-sm">
+          <span className="px-2.5 py-1 rounded-xl bg-gradient-to-r from-amber-100 via-yellow-50 to-amber-100 dark:bg-amber-500/15 border border-amber-300 dark:border-amber-500/30 text-amber-950 dark:text-amber-600 text-xs uppercase tracking-wider font-black shadow-sm">
             Team Score
           </span>
           <span className="text-slate-900 dark:text-white font-black text-sm sm:text-base">
-            <strong className="text-amber-950 dark:text-amber-300">{Math.ceil(points)}</strong> pts
+            <strong className="text-amber-950 dark:text-amber-600">{Math.ceil(points)}</strong> pts
           </span>
         </div>
       </div>

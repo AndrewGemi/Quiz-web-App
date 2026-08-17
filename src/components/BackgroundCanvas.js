@@ -172,7 +172,7 @@ export default function BackgroundCanvas({ theme = "dark" }) {
   }, []);
 
   return (
-    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden select-none isolate transform-gpu animate-canvas-fade">
+    <div className="fixed inset-0 w-full h-full min-h-[100vh] min-h-[100dvh] pointer-events-none z-0 overflow-hidden select-none isolate transform-gpu animate-canvas-fade">
       {/* Base Canvas Gradient */}
       <div
         className={`absolute inset-0 transition-colors duration-700 ${

@@ -17,13 +17,13 @@ export function FullscreenButton({ className = "" }) {
   const toggleFs = () => {
     if (!document.fullscreenElement) {
       if (document.documentElement.requestFullscreen) {
-        document.documentElement.requestFullscreen().catch(() => {});
+        document.documentElement.requestFullscreen().catch(() => { });
       } else if (document.documentElement.webkitRequestFullscreen) {
         document.documentElement.webkitRequestFullscreen();
       }
     } else {
       if (document.exitFullscreen) {
-        document.exitFullscreen().catch(() => {});
+        document.exitFullscreen().catch(() => { });
       } else if (document.webkitExitFullscreen) {
         document.webkitExitFullscreen();
       }
@@ -62,11 +62,10 @@ export function ThemeToggle({ theme = "dark", onToggle, className = "" }) {
       onClick={onToggle}
       title={isLight ? "Switch to Dark Mode" : "Switch to Light Mode"}
       aria-label={isLight ? "Switch to Dark Mode" : "Switch to Light Mode"}
-      className={`glass-card p-2.5 rounded-2xl border backdrop-blur-xl transition-all flex items-center justify-center cursor-pointer ${
-        isLight
-          ? "bg-amber-100/90 border-amber-300/80 text-amber-800 hover:bg-amber-200 shadow-md"
-          : "bg-[#120826]/90 border-purple-500/30 text-amber-300 hover:text-amber-200 hover:bg-purple-600/30 shadow-xl"
-      } ${className}`}
+      className={`glass-card p-2.5 rounded-2xl border backdrop-blur-xl transition-all flex items-center justify-center cursor-pointer ${isLight
+        ? "bg-amber-100/90 border-amber-300/80 text-amber-800 hover:bg-amber-200 shadow-md"
+        : "bg-[#120826]/90 border-purple-500/30 text-amber-600 hover:text-amber-200 hover:bg-purple-600/30 shadow-xl"
+        } ${className}`}
     >
       {isLight ? (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -82,7 +81,7 @@ export function ThemeToggle({ theme = "dark", onToggle, className = "" }) {
 }
 
 function Timer({
-  dispatch = () => {},
+  dispatch = () => { },
   secondsRemaining = 0,
   isTimerPaused = false,
   secPerQuestion = 20,
@@ -117,13 +116,13 @@ function Timer({
   const toggleFs = () => {
     if (!document.fullscreenElement) {
       if (document.documentElement.requestFullscreen) {
-        document.documentElement.requestFullscreen().catch(() => {});
+        document.documentElement.requestFullscreen().catch(() => { });
       } else if (document.documentElement.webkitRequestFullscreen) {
         document.documentElement.webkitRequestFullscreen();
       }
     } else {
       if (document.exitFullscreen) {
-        document.exitFullscreen().catch(() => {});
+        document.exitFullscreen().catch(() => { });
       } else if (document.webkitExitFullscreen) {
         document.webkitExitFullscreen();
       }
@@ -157,7 +156,7 @@ function Timer({
       a.pause();
       try {
         a.currentTime = 0;
-      } catch {}
+      } catch { }
     });
   }, []);
 
@@ -192,7 +191,7 @@ function Timer({
           .then(() => {
             if (token !== playTokenRef.current || isTimerPaused) a.pause();
           })
-          .catch(() => {});
+          .catch(() => { });
       }
     }
 
@@ -200,7 +199,7 @@ function Timer({
       if (beepRef.current) beepRef.current.pause();
       if (timesUpRef.current) {
         timesUpRef.current.currentTime = 0;
-        timesUpRef.current.play().catch(() => {});
+        timesUpRef.current.play().catch(() => { });
       }
     }
   }, [secondsRemaining, isTimerPaused]);
@@ -211,16 +210,16 @@ function Timer({
   const colorClass = isDanger
     ? "text-rose-600 dark:text-rose-400 drop-shadow-[0_0_10px_rgba(244,63,94,0.4)] dark:drop-shadow-[0_0_12px_rgba(244,63,94,0.95)]"
     : isLow
-    ? "text-amber-600 dark:text-amber-300 drop-shadow-[0_0_10px_rgba(251,191,36,0.4)] dark:drop-shadow-[0_0_12px_rgba(251,191,36,0.95)]"
-    : "text-cyan-700 dark:text-cyan-300 drop-shadow-[0_0_10px_rgba(6,182,212,0.4)] dark:drop-shadow-[0_0_12px_rgba(6,182,212,0.95)]";
+      ? "text-amber-600 dark:text-amber-600 drop-shadow-[0_0_10px_rgba(251,191,36,0.4)] dark:drop-shadow-[0_0_12px_rgba(251,191,36,0.95)]"
+      : "text-cyan-700 dark:text-cyan-300 drop-shadow-[0_0_10px_rgba(6,182,212,0.4)] dark:drop-shadow-[0_0_12px_rgba(6,182,212,0.95)]";
 
   const statusText = isDanger
     ? "🔥 CRITICAL"
     : isLow
-    ? "⚠️ LOW TIME"
-    : isTimerPaused
-    ? "⏸ PAUSED"
-    : "⚡ TICKING";
+      ? "⚠️ LOW TIME"
+      : isTimerPaused
+        ? "⏸ PAUSED"
+        : "⚡ TICKING";
 
   return (
     <motion.div
@@ -228,33 +227,31 @@ function Timer({
       animate={
         isDanger
           ? {
-              opacity: 1,
-              y: 0,
-              scale: [1, 1.04, 1],
-              transition: {
-                scale: { repeat: Infinity, duration: 0.5, ease: "easeInOut" },
-                opacity: { duration: 0.2 },
-                y: { duration: 0.2 },
-              },
-            }
+            opacity: 1,
+            y: 0,
+            scale: [1, 1.04, 1],
+            transition: {
+              scale: { repeat: Infinity, duration: 0.5, ease: "easeInOut" },
+              opacity: { duration: 0.2 },
+              y: { duration: 0.2 },
+            },
+          }
           : { opacity: 1, scale: 1, y: 0 }
       }
-      className={`glass-card px-4 py-3 inline-flex items-center gap-3.5 border-2 shadow-lg dark:shadow-[0_12px_35px_rgba(0,0,0,0.6)] rounded-2xl backdrop-blur-xl bg-white/95 dark:bg-[#160b2e]/95 relative transition-all duration-300 ${
-        isDanger
-          ? "border-rose-500 shadow-[0_0_25px_rgba(244,63,94,0.3)] dark:shadow-[0_0_40px_rgba(244,63,94,0.6)] bg-rose-50/90 dark:bg-rose-950/60"
-          : isLow
+      className={`glass-card px-4 py-3 inline-flex items-center gap-3.5 border-2 shadow-lg dark:shadow-[0_12px_35px_rgba(0,0,0,0.6)] rounded-2xl backdrop-blur-xl bg-white/95 dark:bg-[#160b2e]/95 relative transition-all duration-300 ${isDanger
+        ? "border-rose-500 shadow-[0_0_25px_rgba(244,63,94,0.3)] dark:shadow-[0_0_40px_rgba(244,63,94,0.6)] bg-rose-50/90 dark:bg-rose-950/60"
+        : isLow
           ? "border-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.25)] dark:shadow-[0_0_30px_rgba(245,158,11,0.4)] bg-amber-50/90 dark:bg-amber-950/40"
           : "border-purple-200/90 dark:border-purple-500/40 hover:border-purple-400/60"
-      }`}
+        }`}
     >
       {/* Background Animated Pulse Glow for Low/Danger */}
       {(isDanger || isLow) && (
         <motion.div
           animate={{ opacity: [0.2, 0.75, 0.2], scale: [0.95, 1.05, 0.95] }}
           transition={{ repeat: Infinity, duration: 0.8 }}
-          className={`absolute inset-0 pointer-events-none rounded-2xl ${
-            isDanger ? "bg-rose-500/10 dark:bg-rose-500/15" : "bg-amber-500/10 dark:bg-amber-500/15"
-          }`}
+          className={`absolute inset-0 pointer-events-none rounded-2xl ${isDanger ? "bg-rose-500/10 dark:bg-rose-500/15" : "bg-amber-500/10 dark:bg-amber-500/15"
+            }`}
         />
       )}
 
@@ -274,13 +271,12 @@ function Timer({
             initial={{ scale: 0.85, opacity: 0.8 }}
             animate={{ scale: 1.25, opacity: 0 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
-            className={`absolute inset-1 rounded-full border ${
-              isDanger
-                ? "border-rose-500"
-                : isLow
+            className={`absolute inset-1 rounded-full border ${isDanger
+              ? "border-rose-500"
+              : isLow
                 ? "border-amber-400"
                 : "border-cyan-400"
-            }`}
+              }`}
           />
         )}
 
@@ -343,8 +339,8 @@ function Timer({
               isDanger
                 ? "url(#timerGradDanger)"
                 : isLow
-                ? "url(#timerGradLow)"
-                : "url(#timerGradNormal)"
+                  ? "url(#timerGradLow)"
+                  : "url(#timerGradNormal)"
             }
             strokeWidth="4.5"
             strokeLinecap="round"
@@ -378,15 +374,14 @@ function Timer({
             Timer
           </span>
           <span
-            className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full border leading-none ${
-              isDanger
-                ? "bg-rose-100 dark:bg-rose-500/20 text-rose-900 dark:text-rose-300 border-rose-300 dark:border-rose-500/40 animate-pulse"
-                : isLow
-                ? "bg-amber-100 dark:bg-amber-500/20 text-amber-900 dark:text-amber-300 border-amber-300 dark:border-amber-500/40 animate-pulse"
+            className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full border leading-none ${isDanger
+              ? "bg-rose-100 dark:bg-rose-500/20 text-rose-900 dark:text-rose-300 border-rose-300 dark:border-rose-500/40 animate-pulse"
+              : isLow
+                ? "bg-amber-100 dark:bg-amber-500/20 text-amber-900 dark:text-amber-600 border-amber-300 dark:border-amber-500/40 animate-pulse"
                 : isTimerPaused
-                ? "bg-purple-100 dark:bg-purple-500/20 text-purple-900 dark:text-purple-300 border-purple-300 dark:border-purple-500/40"
-                : "bg-cyan-100 dark:bg-cyan-500/20 text-cyan-900 dark:text-cyan-300 border-cyan-300 dark:border-cyan-500/40"
-            }`}
+                  ? "bg-purple-100 dark:bg-purple-500/20 text-purple-900 dark:text-purple-300 border-purple-300 dark:border-purple-500/40"
+                  : "bg-cyan-100 dark:bg-cyan-500/20 text-cyan-900 dark:text-cyan-300 border-cyan-300 dark:border-cyan-500/40"
+              }`}
           >
             {statusText}
           </span>

@@ -8,7 +8,7 @@ const HIGHLIGHTS = [
     title: "Multi-Team Tournaments",
     description:
       "Register up to 8 teams with real-time scoring, slow-motion rank climb animations, and grand podium ceremonies.",
-    color: "from-amber-500/20 to-yellow-500/10 border-amber-400/40 text-amber-950 dark:text-amber-300",
+    color: "from-amber-500/20 to-yellow-500/10 border-amber-400/40 text-amber-950 dark:text-amber-600",
     badge: "Live Arena",
   },
   {

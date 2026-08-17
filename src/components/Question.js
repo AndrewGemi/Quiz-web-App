@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Options from "./Options";
 
 /* Split an answer string into parts for blanks. */
 function splitAnswerParts(s) {
   if (!s) return [];
   return String(s)
-    .split(/\/|,|،/g)
+    .split(/\/|,|،|–|—|-|;|\||\n/g)
     .map((t) => t.trim())
     .filter(Boolean);
 }
@@ -32,7 +32,7 @@ function useAnswers(question) {
 
 /* Build React nodes: replace each placeholder with <mark>answer</mark> */
 function fillWithAnswersNodes(text, parts) {
-  const PLACEHOLDER_RE = /(\.{3,}|…+|_+|ـ{3,})/gu;
+  const PLACEHOLDER_RE = /(\.{2,}|…+|_+|ـ{2,})/gu;
 
   const nodes = [];
   let last = 0;
@@ -48,7 +48,7 @@ function fillWithAnswersNodes(text, parts) {
         key={`ans-${offset}-${idx}`}
         dir="auto"
         title={val}
-        className="px-3 py-1 rounded-xl bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 font-black border border-emerald-300 dark:border-emerald-500/40 shadow-sm dark:shadow-[0_0_15px_rgba(16,185,129,0.35)] mx-1 inline-block"
+        className="px-3 py-1 rounded-xl bg-emerald-100 dark:bg-emerald-500/20 text-green-600 dark:text-green-500 font-black border border-emerald-300 dark:border-emerald-500/40 shadow-sm dark:shadow-[0_0_15px_rgba(16,185,129,0.35)] mx-1 inline-block"
       >
         {val}
       </mark>
@@ -77,8 +77,8 @@ function CompleteReveal({ question, dispatch }) {
     Array.isArray(question.options) && question.options.length > 1
       ? (correctIndex + 1) % question.options.length
       : correctIndex === 0
-      ? 1
-      : 0;
+        ? 1
+        : 0;
 
   const titleNodes = revealed
     ? fillWithAnswersNodes(question.question || "", parts)
@@ -101,19 +101,19 @@ function CompleteReveal({ question, dispatch }) {
         initial={{ opacity: 0, scale: 0.97 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.25 }}
-        className="w-full rounded-2xl p-4 sm:p-6 glass-card border border-emerald-300 dark:border-emerald-500/30 bg-emerald-50/70 dark:bg-card shadow-sm dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_8px_25px_rgba(0,0,0,0.3)] relative overflow-hidden text-center flex flex-col items-center justify-center min-h-[110px]"
+        className="w-full rounded-2xl p-4 sm:p-6 glass-card border border-emerald-300 dark:border-emerald-500/30 bg-emerald-50/70 dark:bg-card shadow-sm dark:shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_8px_25px_rgba(0,0,0,0.3)] relative overflow-hidden text-justify flex flex-col items-center justify-center min-h-[110px] gap-3"
       >
         <div className="absolute -top-20 inset-x-0 h-28 bg-emerald-500/10 dark:bg-emerald-500/15 blur-2xl pointer-events-none rounded-full" />
-        <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider text-emerald-900 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-500/15 border border-emerald-300 dark:border-emerald-500/30 mb-2 shadow-sm">
+        <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider text-emerald-200 dark:text-emerald-300 bg-emerald-800 dark:bg-emerald-500/15 border border-emerald-300 dark:border-emerald-500/30 mb-2 shadow-sm">
           <span>✏️</span>
           <span>Fill in the Blank</span>
         </div>
-        <h3
-          className="text-lg sm:text-2xl lg:text-3xl font-black leading-relaxed text-slate-900 dark:text-white break-words relative z-10 max-w-4xl"
+        <p
+          className=" text-2xl sm:text-4xl lg:text-5xl font-black leading-relaxed sm:leading-loose text-justify text-slate-950 dark:text-white relative z-10 max-w-5xl w-full"
           dir="auto"
         >
           {titleNodes}
-        </h3>
+        </p>
       </motion.div>
 
       {!revealed ? (
@@ -131,10 +131,10 @@ function CompleteReveal({ question, dispatch }) {
           className="flex flex-col gap-6 w-full"
         >
           <div className="rounded-3xl p-6 bg-emerald-50/90 dark:bg-white/5 border border-emerald-300 dark:border-emerald-500/30 flex flex-col gap-2 shadow-[0_0_25px_rgba(16,185,129,0.15)]">
-            <span className="text-xs font-black uppercase tracking-widest text-emerald-900 dark:text-emerald-400">
+            <span className="text-xs font-black uppercase tracking-widest text-green-600 dark:text-green-500">
               Verified Correct Answer
             </span>
-            <div dir="auto" className="text-2xl sm:text-4xl font-black text-emerald-950 dark:text-emerald-300 break-words">
+            <div dir="auto" className="text-2xl sm:text-4xl font-black text-green-600 dark:text-green-500 break-words">
               {fullAnswer}
             </div>
           </div>
@@ -165,7 +165,7 @@ function CompleteReveal({ question, dispatch }) {
 
 export default function Question({
   question,
-  dispatch = () => {},
+  dispatch = () => { },
   answer,
 }) {
   const isMCQ = Array.isArray(question?.options) && question.options.length > 0;
@@ -196,16 +196,16 @@ export default function Question({
     <motion.section
       initial={{ opacity: 0, scale: 0.98, y: 15 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
-      className="w-full max-w-7xl mx-auto glass-card border-2 border-purple-200/90 dark:border-purple-500/40 p-8 sm:p-10 flex flex-col gap-6 shadow-2xl rounded-3xl backdrop-blur-xl bg-white/95 dark:bg-[#120826]/95"
+      className="w-full max-w-7xl mx-auto glass-card border-2 border-purple-200/90 dark:border-purple-500/40 p-8 sm:p-10 flex flex-col gap-6 shadow-2xl rounded-3xl backdrop-blur-xl bg-white/95 dark:bg-[#120826]/95 relative"
     >
       {/* Question Header Badge Bar */}
       <div className="flex items-center justify-between gap-3 pb-4 border-b border-purple-200 dark:border-purple-500/25">
         <div className="flex items-center gap-2.5">
-          <span className="px-4 py-1.5 rounded-full text-xs sm:text-sm font-black uppercase tracking-wider text-purple-900 dark:text-purple-200 bg-purple-100 dark:bg-purple-500/20 border border-purple-300 dark:border-purple-400/30 shadow-sm">
+          {/* <span className="px-4 py-1.5 rounded-full text-xs sm:text-sm font-black uppercase tracking-wider text-purple-900 dark:text-purple-200 bg-purple-100 dark:bg-purple-500/20 border border-purple-300 dark:border-purple-400/30 shadow-sm">
             🎮 {isMCQ ? "Multiple Choice" : "Fill in the Blank"}
-          </span>
-          <span className="px-4 py-1.5 rounded-full text-xs sm:text-sm font-black uppercase tracking-wider text-amber-950 dark:text-amber-300 bg-gradient-to-r from-amber-100 via-yellow-50 to-amber-100 dark:bg-amber-500/20 border border-amber-300 dark:border-amber-400/30 shadow-sm">
-            ⭐ {points} pts
+          </span> */}
+          <span className="px-4 py-1.5 rounded-full text-xs sm:text-sm font-black uppercase tracking-wider text-amber-950 dark:text-amber-600 bg-gradient-to-r from-amber-100 via-yellow-50 to-amber-100 dark:bg-amber-500/20 border border-amber-300 dark:border-amber-400/30 shadow-sm">
+            Question points: ⭐ {points} pts
           </span>
         </div>
       </div>
@@ -219,7 +219,7 @@ export default function Question({
             transition={{ duration: 0.2 }}
             className="w-full rounded-2xl p-8 sm:p-12 glass-card border border-purple-200 dark:border-purple-400/35 bg-slate-50/80 dark:bg-[#0f131d]/70 shadow-sm dark:shadow-xl text-center flex flex-col items-center justify-center min-h-[180px] sm:min-h-[220px]"
           >
-            <h2 dir="auto" className="text-2xl sm:text-4xl lg:text-5xl font-extrabold leading-relaxed text-slate-900 dark:text-white break-words max-w-5xl drop-shadow-sm dark:drop-shadow-md">
+            <h2 dir="auto" className="text-3xl sm:text-5xl lg:text-6xl font-black leading-snug sm:leading-relaxed text-slate-950 dark:text-white text-justify break-words max-w-5xl w-full">
               {question.question}
             </h2>
           </motion.div>
