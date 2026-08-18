@@ -17,6 +17,7 @@ import StartScreen from "./StartScreen";
 import TeamSetup from "./TeamSetup";
 import TeamTransition from "./TeamTransition";
 import Timer, { FullscreenButton, ThemeToggle } from "./Timer";
+import { balanceQuestionsByPoints } from "../utils/excelHelper";
 
 /* ============ Exam files & config ============ */
 const MODE_CONFIG = {
@@ -258,15 +259,18 @@ function reducer(state, action) {
         }
 
         if (!selectedCategory) return state;
-        let shuffled = selectedCategory.questions || [];
-        if (selectedCategory.randomize) {
-          shuffled = shuffle(selectedCategory.questions || []);
-        }
+        const numTeams = state.teams?.length || 1;
+        const rawQuestions = selectedCategory.questions || [];
+        const balancedQuestions = balanceQuestionsByPoints(
+          rawQuestions,
+          numTeams,
+          selectedCategory.randomize !== false
+        );
 
         return {
           ...state,
           currentCategory: catIdentifier,
-          questions: shuffled,
+          questions: balancedQuestions,
           questionType: selectedCategory.type || null,
           status: "active",
           index: 0,

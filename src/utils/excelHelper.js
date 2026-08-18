@@ -357,6 +357,13 @@ export function parseExcelFile(file) {
           categoriesMap[cat].questions.push(cleanQ);
         });
 
+        // Group questions with same points together (sorted ascending by points)
+        Object.values(categoriesMap).forEach((catObj) => {
+          catObj.questions.sort(
+            (a, b) => (Number(a.points) || 10) - (Number(b.points) || 10)
+          );
+        });
+
         const categories = Object.values(categoriesMap);
 
         resolve({
@@ -376,6 +383,74 @@ export function parseExcelFile(file) {
 
     reader.readAsArrayBuffer(file);
   });
+}
+
+/**
+ * Shuffles an array immutably.
+ */
+function shuffleArray(array) {
+  const a = array.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/**
+ * Balances questions by grouping questions with the same points value,
+ * and ensuring questions within each points tier are divided equally among all teams.
+ *
+ * Example:
+ * If there are 6 questions with 5 points:
+ * - With 6 teams: each team gets 1 question (total 6 questions).
+ * - With 2 teams: each team gets 3 questions (total 6 questions).
+ * - With 3 teams: each team gets 2 questions (total 6 questions).
+ * - With 4 teams: each team gets 1 question (total 4 questions, 1 per team).
+ *
+ * If there are multiple points tiers (e.g. 5 pts, 10 pts, 15 pts):
+ * - Each tier is balanced independently so all teams get the exact same number of questions
+ *   for each point value, maintaining 100% fair competition.
+ */
+export function balanceQuestionsByPoints(questions = [], numTeams = 1, shouldShuffle = true) {
+  if (!Array.isArray(questions) || questions.length === 0) return [];
+  if (!numTeams || numTeams <= 1) {
+    return shouldShuffle ? shuffleArray(questions) : [...questions];
+  }
+
+  // 1. Group questions by points value
+  const buckets = {};
+  questions.forEach((q) => {
+    const pts = typeof q.points === "number" ? q.points : 10;
+    if (!buckets[pts]) buckets[pts] = [];
+    buckets[pts].push(q);
+  });
+
+  // 2. Sort point tiers in ascending order (e.g., 5 pts -> 10 pts -> 15 pts -> 20 pts)
+  const sortedTiers = Object.keys(buckets)
+    .map(Number)
+    .sort((a, b) => a - b);
+
+  const balancedList = [];
+
+  sortedTiers.forEach((tier) => {
+    let tierQuestions = shouldShuffle ? shuffleArray(buckets[tier]) : [...buckets[tier]];
+    const totalInTier = tierQuestions.length;
+    // Calculate equal share per team
+    const questionsPerTeam = Math.floor(totalInTier / numTeams);
+    const usableCount = questionsPerTeam * numTeams;
+
+    if (usableCount > 0) {
+      balancedList.push(...tierQuestions.slice(0, usableCount));
+    }
+  });
+
+  // If no tier had enough questions for all teams, fallback to all available questions
+  if (balancedList.length === 0) {
+    return shouldShuffle ? shuffleArray(questions) : [...questions];
+  }
+
+  return balancedList;
 }
 
 /**

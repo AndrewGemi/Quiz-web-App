@@ -1,5 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
+import { balanceQuestionsByPoints } from "../utils/excelHelper";
 
 function CategorySelection({
   categories,
@@ -73,16 +74,24 @@ function CategorySelection({
         <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-slate-900 dark:text-white mb-3">
           Select <span className="text-gradient-cyan">Category Round</span>
         </h1>
-        <p className="text-slate-700 dark:text-slate-300 text-lg sm:text-2xl max-w-2xl mx-auto font-medium">
-          Choose an unlocked topic level to start the multiplayer round.
+        <p className="text-slate-950 dark:text-purple-200 text-lg sm:text-xl font-bold max-w-2xl">
+          Choose a battleground category. Each team gets an equal turn!
         </p>
 
-        {/* Global Category Progress Bar */}
-        <div className="w-full max-w-lg mx-auto mt-6 bg-slate-200 dark:bg-white/5 rounded-full h-3.5 p-0.5 border border-slate-300 dark:border-white/10 overflow-hidden shadow-inner">
-          <div
-            className="h-full bg-gradient-to-r from-cyan-500 via-teal-400 to-emerald-400 rounded-full transition-all duration-500"
-            style={{ width: `${progressPercent}%` }}
-          />
+        {/* Global Progress Bar */}
+        <div className="w-full max-w-md mx-auto mt-6">
+          <div className="flex justify-between text-xs font-black text-slate-950 dark:text-purple-200 uppercase mb-2">
+            <span>Tournament Progress</span>
+            <span>{progressPercent}% Complete</span>
+          </div>
+          <div className="h-3 w-full bg-slate-200 dark:bg-purple-950/60 rounded-full border border-purple-300 dark:border-purple-500/30 overflow-hidden p-0.5">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${progressPercent}%` }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+              className="h-full bg-gradient-to-r from-emerald-500 to-cyan-400 rounded-full shadow-[0_0_12px_rgba(16,185,129,0.7)]"
+            />
+          </div>
         </div>
       </div>
 
@@ -94,8 +103,11 @@ function CategorySelection({
             completedCategories.includes(index) ||
             completedCategories.includes(category);
           const icon = category.type === "complete" ? "✏️" : "🔘";
-          const qCount = category.questions?.length || 0;
-          const totalPts = category.questions?.reduce(
+          const numTeams = teams?.length || 1;
+          const rawQuestions = category.questions || [];
+          const usableQuestions = balanceQuestionsByPoints(rawQuestions, numTeams, false);
+          const qCount = usableQuestions.length || rawQuestions.length;
+          const totalPts = usableQuestions.reduce(
             (acc, q) => acc + (typeof q.points === "number" ? q.points : 10),
             0
           );
