@@ -233,7 +233,7 @@ function TeamTransition({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.92, y: -20 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
-            className="w-full max-w-2xl glass-card p-6 sm:p-8 border-2 border-purple-300/80 dark:border-purple-500/40 shadow-[0_20px_60px_rgba(124,58,237,0.25)] dark:shadow-[0_0_60px_rgba(139,92,246,0.35)] rounded-3xl flex flex-col items-center gap-6 my-auto bg-white/95 dark:bg-[#140a2b]/95 overflow-visible relative"
+            className="w-full max-w-4xl glass-card p-8 sm:p-10 border-2 border-purple-300/80 dark:border-purple-500/40 shadow-[0_20px_60px_rgba(124,58,237,0.25)] dark:shadow-[0_0_60px_rgba(139,92,246,0.35)] rounded-3xl flex flex-col items-center gap-6 my-auto bg-white/95 dark:bg-[#140a2b]/95 overflow-visible relative"
           >
             {/* Header Title Badge */}
             <div className="flex flex-col items-center text-center gap-2">
@@ -245,7 +245,7 @@ function TeamTransition({
                   </span>
                 )}
               </div>
-              <h2 className="text-2xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+              <h2 className="text-3xl sm:text-5xl font-black text-slate-900 dark:text-white tracking-tight">
                 Current Standings
               </h2>
             </div>

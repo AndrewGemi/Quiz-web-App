@@ -134,7 +134,7 @@ function CompleteReveal({ question, dispatch }) {
             <span className="text-xs font-black uppercase tracking-widest text-green-600 dark:text-green-500">
               Verified Correct Answer
             </span>
-            <div dir="auto" className="text-2xl sm:text-4xl font-black text-green-600 dark:text-green-500 break-words">
+            <div dir="auto" className="text-3xl sm:text-6xl font-black text-green-600 dark:text-green-500 break-words">
               {fullAnswer}
             </div>
           </div>
