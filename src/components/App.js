@@ -1,37 +1,35 @@
-import { useEffect, useReducer } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useReducer, useState } from "react";
+import BackgroundCanvas from "./BackgroundCanvas";
 import CategorySelection from "./CategorySelection";
 import Error from "./Error";
+import ExamModeSelection from "./ExamModeSelection";
+import ExcelUploadModal from "./ExcelUploadModal";
 import FinishScreen from "./FinishScreen";
 import Footer from "./Footer";
-import Header from "./Header";
 import Loader from "./Loader";
+import Logo from "./Logo";
 import Main from "./Main";
 import NextButton from "./NextButton";
-import Progress from "./Progress";
 import Question from "./Question";
 import ResetButton from "./ResetButton";
+import StartScreen from "./StartScreen";
 import TeamSetup from "./TeamSetup";
 import TeamTransition from "./TeamTransition";
-import ExamModeSelection from "./ExamModeSelection";
+import Timer, { FullscreenButton, ThemeToggle } from "./Timer";
+import { balanceQuestionsByPoints } from "../utils/excelHelper";
 
 /* ============ Exam files & config ============ */
-const EXAM_FILES = {
-  real: `${process.env.PUBLIC_URL}/data/questions_real.json`,
-  trial: `${process.env.PUBLIC_URL}/data/questions_trial.json`,
-  shootout: `${process.env.PUBLIC_URL}/data/questions_shootout.json`,
-};
-
 const MODE_CONFIG = {
-  real: { secsPerQuestion: 20, pointsPerCorrect: "question" }, // use question.points
-  trial: { secsPerQuestion: 20, pointsPerCorrect: "question" }, // use question.points
-  shootout: { secsPerQuestion: 20, pointsPerCorrect: 1 }, // fixed 1 per correct
+  real: { secsPerQuestion: 20, pointsPerCorrect: "question" },
+  trial: { secsPerQuestion: 20, pointsPerCorrect: "question" },
+  shootout: { secsPerQuestion: 20, pointsPerCorrect: 1 },
 };
 const getModeConfig = (mode) => MODE_CONFIG[mode] || MODE_CONFIG.trial;
 
 /* ============ Persistence ============ */
 const STORAGE_KEY = "quizify:state:v1";
 
-// Only persist what's needed to resume a round
 const PERSIST_KEYS = [
   "questions",
   "questionType",
@@ -63,13 +61,16 @@ function serializeState(state) {
 const initialState = {
   questions: [],
   questionType: null,
-  status: "selectingExam", // show mode picker first
-  examMode: null, // "real" | "trial" | "shootout"
+  status: "welcome",
+  examMode: null,
   secsPerQuestion: 20,
   pointsPerCorrect: "question",
   index: 0,
   answer: null,
   points: {},
+  prevPoints: {},
+  lastScoredTeam: null,
+  lastPointsEarned: 0,
   secondsRemaining: null,
   isTimerPaused: false,
   teams: [],
@@ -83,60 +84,90 @@ const initialState = {
 };
 
 /* ============ Utils ============ */
-function shuffle(array) {
-  const a = array.slice(); // don't mutate original
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
+// function shuffle(array) {
+//   const a = array.slice();
+//   for (let i = a.length - 1; i > 0; i--) {
+//     const j = Math.floor(Math.random() * (i + 1));
+//     [a[i], a[j]] = [a[j], a[i]];
+//   }
+//   return a;
+// }
 
 /* ============ Reducer ============ */
 function reducer(state, action) {
-  console.log("Reducer action:", action.type, action.payload);
-
   try {
     switch (action.type) {
+      case "startSetup":
+        return { ...state, status: "selectingExam" };
+
+      case "backToWelcome":
+        return { ...state, status: "welcome" };
+
+      case "backToExamMode":
+        return { ...state, status: "selectingExam" };
+
+      case "backToTeams":
+        return { ...state, status: "selectingTeams" };
+
+      case "jumpToStep": {
+        const step = action.payload;
+        if (["selectingExam", "selectingTeams", "selectingCategory"].includes(step)) {
+          return { ...state, status: step };
+        }
+        return state;
+      }
+
       case "dataReceived": {
         const incomingCats = action.payload.categories || [];
         return {
           ...state,
-          categories: state.categories?.length
-            ? state.categories
-            : incomingCats,
+          categories: incomingCats,
           _loadedFromStorage: false,
         };
       }
 
+      case "setSecsPerQuestion": {
+        const secs = parseInt(action.payload, 10) || 20;
+        return {
+          ...state,
+          secsPerQuestion: secs,
+          secondsRemaining: state.status === "active" ? secs : state.secondsRemaining,
+        };
+      }
+
       case "setExamMode": {
-        const mode = action.payload; // "real" | "trial" | "shootout"
+        const payload = action.payload;
+        const mode = typeof payload === "object" ? payload.mode : payload;
+        const customCats = typeof payload === "object" ? payload.customCategories : null;
         const cfg = getModeConfig(mode);
         return {
           ...state,
           examMode: mode,
-          secsPerQuestion: cfg.secsPerQuestion,
+          secsPerQuestion: state.secsPerQuestion || cfg.secsPerQuestion,
           pointsPerCorrect: cfg.pointsPerCorrect,
           status: "selectingTeams",
-          // reset round-specific bits
+          categories: customCats?.length ? customCats : [],
           questions: [],
           index: 0,
           answer: null,
           points: Object.fromEntries((state.teams || []).map((t) => [t, 0])),
-          secondsRemaining: null,
+          secondsRemaining: state.secsPerQuestion || cfg.secsPerQuestion,
           isTimerPaused: false,
           currentCategory: null,
+          completedCategories: [],
+          _loadedFromStorage: false,
         };
       }
 
       case "teamsConfirmed": {
-        const teams = action.payload || [];
+        const rawTeams = action.payload || [];
+        const teamNames = rawTeams.map((t) => (typeof t === "string" ? t : t.name));
         return {
           ...state,
-          teams,
-          points: teams.reduce((acc, team) => ({ ...acc, [team]: 0 }), {}),
-          totalPoints: teams.reduce((acc, team) => ({ ...acc, [team]: 0 }), {}),
-          currentTeam: teams[0] || null,
+          teams: teamNames,
+          points: teamNames.reduce((acc, team) => ({ ...acc, [team]: 0 }), {}),
+          totalPoints: teamNames.reduce((acc, team) => ({ ...acc, [team]: 0 }), {}),
+          currentTeam: teamNames[0] || null,
           status: "selectingCategory",
         };
       }
@@ -149,7 +180,8 @@ function reducer(state, action) {
           ...state,
           status: "active",
           secondsRemaining: state.secsPerQuestion,
-          isTimerPaused: false,
+          showTransition: true,
+          isTimerPaused: true,
         };
 
       case "tick":
@@ -192,6 +224,9 @@ function reducer(state, action) {
         return {
           ...state,
           answer: action.payload,
+          prevPoints: { ...state.points },
+          lastScoredTeam: currentTeam,
+          lastPointsEarned: pointsToAdd,
           points: {
             ...state.points,
             [currentTeam]: (state.points[currentTeam] || 0) + pointsToAdd,
@@ -201,67 +236,100 @@ function reducer(state, action) {
       }
 
       case "hideTransition":
-        return { ...state, showTransition: false };
+        return {
+          ...state,
+          showTransition: false,
+          isTimerPaused: false,
+          secondsRemaining: state.secsPerQuestion,
+        };
 
       case "selectCategory": {
-        const categoryIndex = action.payload;
-        const selectedCategory = state.categories[categoryIndex];
-        if (!selectedCategory) return state;
-        let shuffled = selectedCategory.questions || [];
-        if (selectedCategory.randomize) {
-          shuffled = shuffle(selectedCategory.questions || []);
+        let selectedCategory = null;
+        let catIdentifier = null;
+
+        if (typeof action.payload === "number") {
+          selectedCategory = state.categories[action.payload];
+          catIdentifier = selectedCategory?.title || action.payload;
+        } else if (typeof action.payload === "object" && action.payload !== null) {
+          selectedCategory = action.payload;
+          catIdentifier = selectedCategory.title;
+        } else if (typeof action.payload === "string") {
+          selectedCategory = state.categories.find((c) => c.title === action.payload);
+          catIdentifier = action.payload;
         }
+
+        if (!selectedCategory) return state;
+        const numTeams = state.teams?.length || 1;
+        const rawQuestions = selectedCategory.questions || [];
+        const balancedQuestions = balanceQuestionsByPoints(
+          rawQuestions,
+          numTeams,
+          selectedCategory.randomize !== false
+        );
 
         return {
           ...state,
-          currentCategory: categoryIndex,
-          questions: shuffled,
+          currentCategory: catIdentifier,
+          questions: balancedQuestions,
           questionType: selectedCategory.type || null,
           status: "active",
           index: 0,
           answer: null,
+          prevPoints: Object.fromEntries(state.teams.map((team) => [team, 0])),
+          lastScoredTeam: null,
+          lastPointsEarned: 0,
           currentTeam: state.teams[0] || null,
           points: Object.fromEntries(state.teams.map((team) => [team, 0])),
           secondsRemaining: state.secsPerQuestion,
           showTransition: true,
+          isTimerPaused: true,
         };
       }
 
-      case "categoryComplete": {
-        const newTotalPoints = { ...state.totalPoints };
-        Object.entries(state.points || {}).forEach(([team, score]) => {
-          newTotalPoints[team] = (newTotalPoints[team] || 0) + (score || 0);
-        });
-
-        const newCompletedCategories = [
-          ...state.completedCategories,
-          state.currentCategory,
-        ];
-        const isLastCategory =
-          newCompletedCategories.length >= state.categories.length;
-
-        return {
-          ...state,
-          completedCategories: newCompletedCategories,
-          totalPoints: newTotalPoints,
-          status: isLastCategory ? "finished" : "selectingCategory",
-          currentCategory: isLastCategory ? state.currentCategory : null,
-          questions: [],
-          index: 0,
-          answer: null,
-          points: Object.fromEntries(state.teams.map((team) => [team, 0])),
-          showTransition: true,
-        };
-      }
-
+      case "categoryComplete":
       case "nextQuestion": {
         const isLastQuestion = state.index >= state.questions.length - 1;
-        if (isLastQuestion) {
+        if (isLastQuestion || action.type === "categoryComplete") {
+          const newTotalPoints = { ...state.totalPoints };
+          Object.entries(state.points || {}).forEach(([team, score]) => {
+            newTotalPoints[team] = (newTotalPoints[team] || 0) + (Number(score) || 0);
+          });
+
+          const currentCatKey =
+            (typeof state.currentCategory === "object"
+              ? state.currentCategory?.title
+              : state.currentCategory) || state.currentCategory;
+
+          const alreadyCompleted =
+            state.completedCategories.includes(currentCatKey) ||
+            state.completedCategories.some(
+              (c) => (typeof c === "object" ? c.title : c) === currentCatKey
+            );
+
+          const newCompletedCategories = alreadyCompleted
+            ? state.completedCategories
+            : [...state.completedCategories, currentCatKey];
+
+          const totalCategoriesCount = state.categories?.length || 1;
+          const isAllCategoriesCompleted =
+            newCompletedCategories.length >= totalCategoriesCount;
+
           return {
             ...state,
-            status: "finished",
-            showTransition: false,
+            completedCategories: newCompletedCategories,
+            totalPoints: newTotalPoints,
+            status: isAllCategoriesCompleted ? "finished" : "selectingCategory",
+            currentCategory: isAllCategoriesCompleted ? state.currentCategory : null,
+            questions: [],
+            index: 0,
+            answer: null,
+            prevPoints: {},
+            lastScoredTeam: null,
+            lastPointsEarned: 0,
+            points: Object.fromEntries(state.teams.map((team) => [team, 0])),
+            showTransition: true,
             secondsRemaining: null,
+            isTimerPaused: true,
           };
         }
 
@@ -275,7 +343,6 @@ function reducer(state, action) {
         let nextCurrentTeam;
 
         if (endOfRound) {
-          // --- End of round: consider elimination ---
           const scores = state.teams.map((t) => ({
             team: t,
             score: state.points[t] || 0,
@@ -285,7 +352,6 @@ function reducer(state, action) {
           const max = Math.max(...values);
 
           if (max !== min) {
-            // eliminate all teams tied at the minimum score
             const survivors = scores
               .filter((s) => s.score > min)
               .map((s) => s.team);
@@ -296,10 +362,8 @@ function reducer(state, action) {
                 acc[t] = state.points[t] || 0;
                 return acc;
               }, {});
-              // After a round reset, start next round from the first survivor
               nextCurrentTeam = survivors[0];
             } else {
-              // Only one team meaningfully ahead -> finish now
               const winner =
                 scores.find((s) => s.score === max)?.team || state.currentTeam;
               return {
@@ -311,11 +375,9 @@ function reducer(state, action) {
               };
             }
           } else {
-            // Perfect tie across all teams -> no elimination this round
             nextCurrentTeam = state.teams[0];
           }
         } else {
-          // Normal rotation within the round
           nextCurrentTeam = state.teams[nextTeamIndex];
         }
 
@@ -328,19 +390,59 @@ function reducer(state, action) {
           currentTeam: nextCurrentTeam,
           secondsRemaining: state.secsPerQuestion,
           showTransition: true,
-          isTimerPaused: false,
+          isTimerPaused: true,
+        };
+      }
+
+      case "startPenaltyShootout": {
+        const tiedTeams = action.payload || [];
+        const cfg = getModeConfig("shootout");
+        return {
+          ...state,
+          examMode: "shootout",
+          secsPerQuestion: cfg.secsPerQuestion,
+          pointsPerCorrect: cfg.pointsPerCorrect,
+          status: "selectingCategory",
+          teams: tiedTeams,
+          currentTeam: tiedTeams[0] || null,
+          points: tiedTeams.reduce((acc, t) => ({ ...acc, [t]: 0 }), {}),
+          prevPoints: tiedTeams.reduce((acc, t) => ({ ...acc, [t]: 0 }), {}),
+          lastScoredTeam: null,
+          lastPointsEarned: 0,
+          totalPoints: tiedTeams.reduce((acc, t) => ({ ...acc, [t]: 0 }), {}),
+          questions: [],
+          index: 0,
+          answer: null,
+          categories: [],
+          completedCategories: [],
+          _loadedFromStorage: false,
         };
       }
 
       case "restart": {
         try {
           sessionStorage.removeItem(STORAGE_KEY);
-        } catch {}
+        } catch { }
         return {
           ...initialState,
-          status: "selectingExam", // show ExamModeSelection
-          examMode: null, // clear previous choice
-          categories: [], // (optional) clear to avoid stale data from old mode
+          status: "welcome",
+          examMode: null,
+          categories: [],
+          questions: [],
+          teams: [],
+          points: {},
+          prevPoints: {},
+          totalPoints: {},
+          lastScoredTeam: null,
+          lastPointsEarned: 0,
+          currentTeam: null,
+          currentCategory: null,
+          completedCategories: [],
+          index: 0,
+          answer: null,
+          secondsRemaining: null,
+          isTimerPaused: false,
+          _loadedFromStorage: false,
         };
       }
 
@@ -356,6 +458,27 @@ function reducer(state, action) {
 
 /* ============ App component ============ */
 export default function App() {
+  const [theme, setTheme] = useState(() => {
+    try {
+      return localStorage.getItem("quizify_theme") || "dark";
+    } catch {
+      return "dark";
+    }
+  });
+
+  useEffect(() => {
+    if (theme === "light") {
+      document.documentElement.classList.add("light");
+      document.documentElement.classList.remove("dark");
+    } else {
+      document.documentElement.classList.add("dark");
+      document.documentElement.classList.remove("light");
+    }
+    try {
+      localStorage.setItem("quizify_theme", theme);
+    } catch { }
+  }, [theme]);
+
   const [state, dispatch] = useReducer(reducer, initialState, (init) => {
     try {
       const raw = sessionStorage.getItem(STORAGE_KEY);
@@ -367,7 +490,6 @@ export default function App() {
     }
   });
 
-  // Persist after each state change
   useEffect(() => {
     try {
       sessionStorage.setItem(
@@ -379,27 +501,62 @@ export default function App() {
     }
   }, [state]);
 
-  // Load categories for the chosen exam mode
-  useEffect(() => {
-    // If we resumed and already have categories, don’t refetch
-    if (state._loadedFromStorage && state.categories?.length) return;
-    if (!state.examMode) return; // wait until a mode is picked
+  const [isExcelModalOpen, setIsExcelModalOpen] = useState(false);
+  const [customCategories, setCustomCategories] = useState(null);
+  const [customSummary, setCustomSummary] = useState(null);
 
-    const url = EXAM_FILES[state.examMode] || EXAM_FILES.real;
+  function handleExcelImportSuccess(categories, summary) {
+    setCustomCategories(categories);
+    setCustomSummary(summary);
+  }
+
+  function handleClearCustomCategories() {
+    setCustomCategories(null);
+    setCustomSummary(null);
+  }
+
+  useEffect(() => {
+    if (state._loadedFromStorage && state.categories?.length) return;
+    if (!state.examMode) return;
+    if (customCategories?.length) return;
+
+    const fileName =
+      state.examMode === "trial"
+        ? "questions_trial.json"
+        : state.examMode === "shootout"
+          ? "questions_shootout.json"
+          : "questions_real.json";
+
+    const primaryUrl = `${process.env.PUBLIC_URL || ""}/data/${fileName}`;
     let cancelled = false;
 
-    fetch(url)
-      .then((r) => r.json())
+    fetch(primaryUrl)
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
       .then((data) => {
         if (cancelled) return;
         dispatch({ type: "dataReceived", payload: data });
       })
-      .catch(() => !cancelled && dispatch({ type: "dataFailed" }));
+      .catch((err) => {
+        console.warn("Primary fetch failed, attempting relative fallback:", err);
+        fetch(`./data/${fileName}`)
+          .then((r) => r.json())
+          .then((data) => {
+            if (cancelled) return;
+            dispatch({ type: "dataReceived", payload: data });
+          })
+          .catch((finalErr) => {
+            console.error("All fetch attempts failed for question bank:", finalErr);
+            if (!cancelled) dispatch({ type: "dataFailed" });
+          });
+      });
 
     return () => {
       cancelled = true;
     };
-  }, [state.examMode, state._loadedFromStorage]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [state.examMode, state._loadedFromStorage, state.categories?.length, customCategories]);
 
   const {
     questions,
@@ -407,6 +564,9 @@ export default function App() {
     index,
     answer,
     points,
+    prevPoints,
+    lastScoredTeam,
+    lastPointsEarned,
     secondsRemaining,
     isTimerPaused,
     currentTeam,
@@ -421,114 +581,280 @@ export default function App() {
   } = state;
 
   const numQuestions = questions?.length || 0;
-  const categoryTotalPoints =
-    questions?.reduce((prev, cur) => prev + (cur?.points || 0), 0) || 0;
 
   return (
-    <div className="app">
-      <Header />
-      {status !== "selectingExam" && <ResetButton dispatch={dispatch} />}
+    <div className="app-shell min-h-screen text-slate-900 dark:text-slate-100 relative">
+      <BackgroundCanvas theme={theme} />
+
+      {/* Excel Upload Modal */}
+      <ExcelUploadModal
+        isOpen={isExcelModalOpen}
+        onClose={() => setIsExcelModalOpen(false)}
+        onImportSuccess={(cats, summary) => {
+          handleExcelImportSuccess(cats, summary);
+        }}
+      />
+
+      {/* Floating Logo in Top Left */}
+      <div className="fixed top-4 left-4 sm:left-6 z-40 glass-card px-4 py-2 border-purple-200/90 dark:border-purple-500/30 backdrop-blur-xl bg-white/95 dark:bg-[#120826]/90 rounded-2xl shadow-md dark:shadow-xl select-none">
+        <Logo />
+      </div>
+
+      {/* Floating Controls in Top Right */}
+      <div className="fixed top-4 right-4 sm:right-6 z-40 flex items-center gap-2.5">
+        <ThemeToggle
+          theme={theme}
+          onToggle={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
+        />
+        {status === "active" ? (
+          <Timer
+            dispatch={dispatch}
+            secondsRemaining={secondsRemaining || 0}
+            isTimerPaused={isTimerPaused}
+            secPerQuestion={secsPerQuestion}
+          />
+        ) : (
+          <FullscreenButton />
+        )}
+      </div>
+
+      {(status === "active" ||
+        status === "selectingCategory" ||
+        status === "selectingTeams") && <ResetButton dispatch={dispatch} />}
 
       <Main>
-        <div className="main px-4 sm:px-6">
-          {status === "loading" && <Loader />}
-          {status === "error" && <Error />}
+        <div className="w-full relative z-10 min-h-[60vh] flex flex-col justify-center">
+          <AnimatePresence mode="wait">
+            {status === "loading" && (
+              <motion.div
+                key="loading"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.3 }}
+              >
+                <Loader />
+              </motion.div>
+            )}
 
-          {status === "selectingExam" && (
-            <ExamModeSelection
-              onPick={(mode) =>
-                dispatch({ type: "setExamMode", payload: mode })
-              }
-            />
-          )}
+            {status === "error" && (
+              <motion.div
+                key="error"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.3 }}
+              >
+                <Error />
+              </motion.div>
+            )}
 
-          {status === "selectingTeams" && (
-            <TeamSetup
-              onConfirm={(teams) =>
-                dispatch({ type: "teamsConfirmed", payload: teams })
-              }
-            />
-          )}
-
-          {status === "selectingCategory" && (
-            <CategorySelection
-              categories={categories || []}
-              onSelect={(i) => dispatch({ type: "selectCategory", payload: i })}
-              completedCategories={completedCategories || []}
-            />
-          )}
-
-          {status === "active" && (
-            <>
-              {showTransition ? (
-                <TeamTransition
-                  team={currentTeam || "Team"}
-                  onContinue={() => dispatch({ type: "hideTransition" })}
+            {status === "welcome" && (
+              <motion.div
+                key="welcome"
+                initial={{ opacity: 0, y: 25, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -25, scale: 0.96 }}
+                transition={{ duration: 0.35, ease: "easeOut" }}
+              >
+                <StartScreen
+                  onStart={() => dispatch({ type: "startSetup" })}
+                  onOpenExcelModal={() => setIsExcelModalOpen(true)}
+                  customCategories={customCategories}
+                  customSummary={customSummary}
+                  onClearCustomCategories={handleClearCustomCategories}
                 />
-              ) : (
-                <div className="flex flex-col items-center py-2 w-full">
-                  <div className="mb-8 text-center w-full">
-                    <span className="text-xl lg:text-4xl font-semibold">
-                      Current team:{" "}
-                      <span className="text-[#6b05fa]">
-                        {currentTeam || "Unknown"}
-                      </span>
-                    </span>
-                  </div>
+              </motion.div>
+            )}
 
-                  <Progress
-                    index={index}
-                    numQuestions={numQuestions}
-                    points={
-                      points && currentTeam ? points[currentTeam] || 0 : 0
-                    }
-                    totalPoints={
-                      teams?.length ? categoryTotalPoints / teams.length : 0
-                    }
-                    answer={answer}
-                  />
+            {status === "selectingExam" && (
+              <motion.div
+                key="selectingExam"
+                initial={{ opacity: 0, y: 25, scale: 0.96, filter: "blur(4px)" }}
+                animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+                exit={{ opacity: 0, y: -25, scale: 0.96, filter: "blur(4px)" }}
+                transition={{ duration: 0.35, ease: "easeOut" }}
+              >
+                <ExamModeSelection
+                  onPick={(mode) =>
+                    dispatch({
+                      type: "setExamMode",
+                      payload: { mode, customCategories },
+                    })
+                  }
+                  onBack={() => dispatch({ type: "backToWelcome" })}
+                  onOpenExcelModal={() => setIsExcelModalOpen(true)}
+                  customCategories={customCategories}
+                  customSummary={customSummary}
+                  onClearCustomCategories={handleClearCustomCategories}
+                  secsPerQuestion={secsPerQuestion}
+                  onSetSecsPerQuestion={(s) =>
+                    dispatch({ type: "setSecsPerQuestion", payload: s })
+                  }
+                />
+              </motion.div>
+            )}
 
-                  {questions[index] && (
-                    <Question
-                      questionType={questionType}
-                      question={questions[index]}
-                      dispatch={dispatch}
-                      answer={answer}
-                      secPerQuestion={secsPerQuestion}
-                      secondsRemaining={secondsRemaining || 0}
-                      isTimerPaused={isTimerPaused}
-                    />
-                  )}
+            {status === "selectingTeams" && (
+              <motion.div
+                key="selectingTeams"
+                initial={{ opacity: 0, y: 25, scale: 0.96, filter: "blur(4px)" }}
+                animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+                exit={{ opacity: 0, y: -25, scale: 0.96, filter: "blur(4px)" }}
+                transition={{ duration: 0.35, ease: "easeOut" }}
+              >
+                <TeamSetup
+                  onConfirm={(teams) =>
+                    dispatch({ type: "teamsConfirmed", payload: teams })
+                  }
+                  onBack={() => dispatch({ type: "backToExamMode" })}
+                  examMode={state.examMode}
+                  secsPerQuestion={secsPerQuestion}
+                  onSetSecsPerQuestion={(s) =>
+                    dispatch({ type: "setSecsPerQuestion", payload: s })
+                  }
+                />
+              </motion.div>
+            )}
 
-                  <Footer>
-                    <NextButton
+            {status === "selectingCategory" && (
+              <motion.div
+                key="selectingCategory"
+                initial={{ opacity: 0, y: 25, scale: 0.96, filter: "blur(4px)" }}
+                animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+                exit={{ opacity: 0, y: -25, scale: 0.96, filter: "blur(4px)" }}
+                transition={{ duration: 0.35, ease: "easeOut" }}
+              >
+                <CategorySelection
+                  categories={categories || []}
+                  onSelect={(i) => dispatch({ type: "selectCategory", payload: i })}
+                  onBack={() => dispatch({ type: "backToTeams" })}
+                  completedCategories={completedCategories || []}
+                  teams={teams || []}
+                  examMode={state.examMode}
+                />
+              </motion.div>
+            )}
+
+            {status === "active" && (
+              <motion.div
+                key="active"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
+                className="w-full flex flex-col items-center"
+              >
+                <AnimatePresence mode="wait">
+                  {showTransition ? (
+                    <TeamTransition
+                      key={`team-transition-${index}-${currentTeam}`}
+                      team={currentTeam || "Team"}
+                      teams={teams || []}
+                      points={points || {}}
+                      prevPoints={prevPoints || {}}
+                      lastScoredTeam={lastScoredTeam}
+                      lastPointsEarned={lastPointsEarned}
+                      totalPoints={totalPoints || {}}
                       index={index}
                       numQuestions={numQuestions}
-                      dispatch={dispatch}
-                      answer={answer}
+                      onContinue={() => dispatch({ type: "hideTransition" })}
                     />
-                  </Footer>
-                </div>
-              )}
-            </>
-          )}
+                  ) : (
+                    <motion.div
+                      key={`question-view-${index}`}
+                      initial={{ opacity: 0, y: 25, scale: 0.97 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -25, scale: 0.97 }}
+                      transition={{ duration: 0.35, ease: "easeOut" }}
+                      className="flex flex-col items-center w-full"
+                    >
+                      {/* Prominent Active Team Turn Banner */}
+                      <div className="mb-4 text-center w-full max-w-7xl mx-auto">
+                        <div className="inline-flex items-center gap-3.5 px-6 py-2.5 rounded-2xl glass-card border-2 border-purple-200/90 dark:border-purple-500/40 shadow-lg dark:shadow-xl backdrop-blur-xl bg-white/95 dark:bg-card relative">
+                          <span className="text-2xl sm:text-3xl animate-pulse">
+                            {teams?.[currentTeam]?.avatar || "🎯"}
+                          </span>
+                          <div className="flex flex-col text-left">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-purple-800 dark:text-purple-300">
+                              Current Turn to Answer
+                            </span>
+                            <span dir="auto" className="text-lg sm:text-2xl font-black text-slate-900 dark:text-white leading-tight">
+                              {teams?.[currentTeam]?.name || currentTeam || "Team"}
+                            </span>
+                          </div>
+                          <div className="relative ml-2">
+                            <span className="px-3.5 py-1 rounded-xl bg-gradient-to-r from-amber-100 via-yellow-50 to-amber-100 dark:bg-amber-500/20 text-amber-950 dark:text-amber-600 font-black text-xs sm:text-sm border border-amber-300 dark:border-amber-400/30 shadow-sm flex items-center gap-1">
+                              ⭐ {points && currentTeam ? points[currentTeam] || 0 : 0} pts
+                            </span>
+                            <AnimatePresence>
+                              {answer !== null && lastPointsEarned > 0 && lastScoredTeam === currentTeam && (
+                                <motion.span
+                                  key="turn-score-badge"
+                                  initial={{ opacity: 0, y: 10, scale: 0.5 }}
+                                  animate={{ opacity: 1, y: -26, scale: 1.15 }}
+                                  exit={{ opacity: 0, y: -36, scale: 0.8 }}
+                                  transition={{ type: "spring", stiffness: 350, damping: 15 }}
+                                  className="absolute -top-1 right-0 px-2.5 py-0.5 rounded-full bg-emerald-500 text-white font-black text-xs shadow-lg flex items-center gap-1 pointer-events-none z-20 whitespace-nowrap"
+                                >
+                                  +{lastPointsEarned} pts! ✨
+                                </motion.span>
+                              )}
+                            </AnimatePresence>
+                          </div>
+                        </div>
+                      </div>
 
-          {status === "finished" && (
-            <FinishScreen
-              points={points || {}}
-              totalPoints={totalPoints || {}}
-              categoryTitle={
-                currentCategory !== null && categories?.[currentCategory]
-                  ? categories[currentCategory].title
-                  : "Quiz Complete"
-              }
-              dispatch={dispatch}
-              hasMoreCategories={
-                (completedCategories?.length || 0) + 1 <
-                (categories?.length || 0)
-              }
-            />
-          )}
+                      {questions[index] && (
+                        <Question
+                          questionType={questionType}
+                          question={questions[index]}
+                          dispatch={dispatch}
+                          answer={answer}
+                          secPerQuestion={secsPerQuestion}
+                          secondsRemaining={secondsRemaining || 0}
+                          isTimerPaused={isTimerPaused}
+                        />
+                      )}
+
+                      <Footer>
+                        <NextButton
+                          dispatch={dispatch}
+                          answer={answer}
+                          index={index}
+                          numQuestions={numQuestions}
+                          isLastCategory={
+                            (completedCategories?.length || 0) + 1 >=
+                            (categories?.length || 1)
+                          }
+                        />
+                      </Footer>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            )}
+
+            {status === "finished" && (
+              <motion.div
+                key="finished"
+                initial={{ opacity: 0, y: 30, scale: 0.94 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -30, scale: 0.94 }}
+                transition={{ duration: 0.4, ease: "easeOut" }}
+              >
+                <FinishScreen
+                  points={points || {}}
+                  totalPoints={totalPoints || {}}
+                  teams={teams || []}
+                  dispatch={dispatch}
+                  categories={categories || []}
+                  completedCategories={completedCategories || []}
+                  currentCategory={currentCategory}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </Main>
     </div>

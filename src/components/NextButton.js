@@ -1,25 +1,37 @@
-function NextButton({ index, numQuestions, dispatch, answer }) {
+import React from "react";
+import { motion } from "framer-motion";
+
+function NextButton({ index, numQuestions, dispatch, answer, isLastCategory = true }) {
   if (answer === null) return null;
 
   const isLast = index >= numQuestions - 1;
 
+  let buttonText = "Next Question →";
+  if (isLast) {
+    buttonText = isLastCategory
+      ? "🏆 Complete Tournament"
+      : "✓ Complete Round (Pick Next Topic) →";
+  }
+
   return (
-    <button
-      className="btn w-full sm:w-auto active:scale-95"
+    <motion.button
+      initial={{ opacity: 0, scale: 0.9, y: 10 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      whileHover={{ scale: 1.03 }}
+      whileTap={{ scale: 0.97 }}
       onClick={() => dispatch({ type: "nextQuestion" })}
-      style={{
-        borderRadius: 14,
-        padding: "14px 18px",
-        fontSize: "1.7rem",
-        fontWeight: 700,
-        background: isLast
-          ? "linear-gradient(90deg,#10b981,#059669)"
-          : "linear-gradient(90deg,#7c3aed,#5b21b6)",
-      }}
-      aria-label={isLast ? "Finish" : "Next"}
+      className={`btn-primary ${isLast ? "btn-emerald" : ""} text-base sm:text-lg px-7 py-3.5 rounded-2xl w-full sm:w-auto shadow-2xl self-end mt-3 flex items-center justify-center gap-2 cursor-pointer font-black`}
+      aria-label={
+        isLast
+          ? isLastCategory
+            ? "Complete Tournament"
+            : "Complete Category Round"
+          : "Next Question"
+      }
+      type="button"
     >
-      {isLast ? "Finish" : "Next"}
-    </button>
+      <span>{buttonText}</span>
+    </motion.button>
   );
 }
 
